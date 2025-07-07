@@ -18,19 +18,19 @@ interface OnlineStatusProps {
 }
 
 export default function OnlineStatus({ compact = false }: OnlineStatusProps) {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [onlineUsers, setOnlineUsers] = useState<User[]>([])
   const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !userProfile) return
 
     // Socket 연결이 없다면 연결
     if (!socketService.getSocket()?.connected) {
       socketService.connect({
-        id: user.id,
-        name: user.name,
-        role: user.role
+        id: user.uid,
+        name: userProfile.displayName,
+        role: userProfile.role
       })
     }
 

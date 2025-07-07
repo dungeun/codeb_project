@@ -126,7 +126,7 @@ export default function KanbanPage() {
   const projectId = params.id as string
   const [columns, setColumns] = useState(mockKanbanColumns)
 
-  const handleColumnsChange = (newColumns: typeof mockKanbanColumns) => {
+  const handleColumnsChange = (newColumns: any) => {
     setColumns(newColumns)
     console.log('Columns updated:', newColumns)
   }
@@ -150,7 +150,7 @@ export default function KanbanPage() {
       }
       return col
     })
-    setColumns(newColumns)
+    setColumns(newColumns as any)
   }
 
   return (

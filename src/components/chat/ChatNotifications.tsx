@@ -41,7 +41,7 @@ export default function ChatNotifications({
 
     // Socket 이벤트 리스너
     socketService.on('new-message', (message) => {
-      if (message.senderId === user.id) return // 자신의 메시지는 알림 제외
+      if (message.senderId === user.uid) return // 자신의 메시지는 알림 제외
 
       const notification: ChatNotification = {
         id: `notif-${Date.now()}`,
@@ -60,7 +60,7 @@ export default function ChatNotifications({
     })
 
     socketService.on('user-joined', ({ user: joinedUser, roomId, roomName }) => {
-      if (joinedUser.id === user.id) return
+      if (joinedUser.id === user.uid) return
 
       const notification: ChatNotification = {
         id: `notif-${Date.now()}`,
@@ -79,7 +79,7 @@ export default function ChatNotifications({
     })
 
     socketService.on('user-left', ({ user: leftUser, roomId, roomName }) => {
-      if (leftUser.id === user.id) return
+      if (leftUser.id === user.uid) return
 
       const notification: ChatNotification = {
         id: `notif-${Date.now()}`,
@@ -98,7 +98,7 @@ export default function ChatNotifications({
     })
 
     socketService.on('new-file', (fileMessage) => {
-      if (fileMessage.senderId === user.id) return
+      if (fileMessage.senderId === user.uid) return
 
       const notification: ChatNotification = {
         id: `notif-${Date.now()}`,
@@ -117,7 +117,7 @@ export default function ChatNotifications({
     })
 
     socketService.on('screen-share-started', ({ userId, userName, roomId, roomName }) => {
-      if (userId === user.id) return
+      if (userId === user.uid) return
 
       const notification: ChatNotification = {
         id: `notif-${Date.now()}`,

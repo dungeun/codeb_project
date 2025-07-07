@@ -252,7 +252,7 @@ export default function MultiChatPage() {
   }
 
   // 권한 체크 - Hook 호출 이후에 수행
-  if (userProfile?.role !== 'admin' && userProfile?.role !== 'manager' && userProfile?.role !== 'team_member') {
+  if (userProfile?.role !== 'admin' && userProfile?.role !== 'manager' && userProfile?.role !== 'developer') {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -418,7 +418,7 @@ export default function MultiChatPage() {
                       </p>
                       <button
                         onClick={() => handleAcceptRequest(request)}
-                        disabled={operatorStatus && operatorStatus.activeChats >= operatorStatus.maxChats}
+                        disabled={!!operatorStatus && operatorStatus.activeChats >= operatorStatus.maxChats}
                         className="w-full py-2 px-3 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         요청 수락

@@ -48,7 +48,7 @@ const priorityIcons = {
 }
 
 // StrictMode 이슈 해결을 위한 래퍼 컴포넌트
-function StrictModeDroppable({ children, ...props }: { children: (provided: any, snapshot: any) => React.ReactElement; [key: string]: any }) {
+function StrictModeDroppable({ children, ...props }: { children: (provided: any, snapshot: any) => React.ReactElement; droppableId: string; [key: string]: any }) {
   const [enabled, setEnabled] = useState(false)
   
   useEffect(() => {

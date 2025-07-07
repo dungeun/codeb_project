@@ -1,4 +1,5 @@
 // 프로젝트 관련 타입 정의
+import { Project, Task, File } from './index'
 
 export interface GanttTask {
   id: string

@@ -57,8 +57,8 @@ export default function ChatPage() {
       {
         id: '1',
         content: '안녕하세요! 프로젝트 진행 상황을 확인하러 왔습니다.',
-        senderId: user.id,
-        senderName: user.name,
+        senderId: user.uid,
+        senderName: userProfile?.displayName || '사용자',
         timestamp: new Date(Date.now() - 3600000),
         read: true,
       },
@@ -73,8 +73,8 @@ export default function ChatPage() {
       {
         id: '3',
         content: '좋습니다! 예상 완료일은 언제인가요?',
-        senderId: user.id,
-        senderName: user.name,
+        senderId: user.uid,
+        senderName: userProfile?.displayName || '사용자',
         timestamp: new Date(Date.now() - 2400000),
         read: true,
       },
@@ -105,7 +105,7 @@ export default function ChatPage() {
       id: `temp-${Date.now()}`,
       content,
       senderId: user.uid,
-      senderName: userProfile.displayName,
+      senderName: userProfile?.displayName || '사용자',
       timestamp: new Date(),
       read: false,
       files: files?.map(file => ({

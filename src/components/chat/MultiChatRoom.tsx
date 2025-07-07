@@ -26,7 +26,7 @@ interface MultiChatRoomProps {
 }
 
 export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [messages, setMessages] = useState<any[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map())
@@ -35,13 +35,13 @@ export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) 
   const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !userProfile) return
 
     // Socket 연결
     const socket = socketService.connect({
-      id: user.id,
-      name: user.name,
-      role: user.role,
+      id: user.uid,
+      name: userProfile.displayName,
+      role: userProfile.role,
     })
 
     // 채팅방 참여
@@ -86,7 +86,7 @@ export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) 
           })
         }, 3000)
         
-        typingTimeoutRef.current.set(userId, timeout)
+        typingTimeoutRef.current.set(userId, timeout as unknown as NodeJS.Timeout)
       } else {
         setTypingUsers(prev => {
           const newMap = new Map(prev)
@@ -115,7 +115,7 @@ export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) 
       socketService.off('screen-share-started')
       socketService.off('screen-share-stopped')
     }
-  }, [user, roomId])
+  }, [user, userProfile, roomId])
 
   // 메시지 전송
   const handleSendMessage = (content: string) => {
@@ -129,7 +129,7 @@ export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) 
 
   // 화면 공유
   const toggleScreenShare = async () => {
-    if (isScreenSharing === user?.id) {
+    if (isScreenSharing === user?.uid) {
       // 화면 공유 중지
       socketService.stopScreenShare(roomId)
       setIsScreenSharing(null)
@@ -184,7 +184,7 @@ export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) 
               <button 
                 onClick={toggleScreenShare}
                 className={`p-2 rounded-lg transition-colors ${
-                  isScreenSharing === user?.id 
+                  isScreenSharing === user?.uid 
                     ? 'bg-red-100 text-red-600' 
                     : 'hover:bg-gray-100'
                 }`}
@@ -206,7 +206,7 @@ export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) 
               <ChatMessage
                 key={message.id}
                 message={message}
-                isOwn={message.senderId === user?.id}
+                isOwn={message.senderId === user?.uid}
               />
             ))}
           </AnimatePresence>
@@ -268,7 +268,7 @@ export default function MultiChatRoom({ roomId, roomName }: MultiChatRoomProps) 
                    participant.role === 'customer' ? '고객' : '팀원'}
                 </p>
               </div>
-              {participant.id === user?.id && (
+              {participant.id === user?.uid && (
                 <span className="text-xs text-gray-400">(나)</span>
               )}
             </div>

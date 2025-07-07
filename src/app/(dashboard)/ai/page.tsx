@@ -138,10 +138,7 @@ export default function AIPage() {
       </div>
 
       {/* AI Insights */}
-      <AIInsights 
-        insights={sampleInsights}
-        onInsightClick={setSelectedInsight}
-      />
+      <AIInsights />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

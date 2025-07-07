@@ -1,15 +1,16 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import WorkflowMonitor from '@/components/automation/WorkflowMonitor'
 import { useAuth } from '@/lib/auth-context'
+import { WorkflowRun } from '@/types/automation'
 
 export default function WorkflowRunsPage() {
-  const { user } = useAuth()
+  const { userProfile } = useAuth()
 
   // 권한 체크
-  if (user?.role !== 'admin' && user?.role !== 'team_member') {
+  if (userProfile?.role !== 'admin' && userProfile?.role !== 'manager' && userProfile?.role !== 'developer') {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">

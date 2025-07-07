@@ -24,7 +24,7 @@ const promptTemplates = [
 ]
 
 export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [messages, setMessages] = useState<AIAssistantMessage[]>([
     {
       id: '1',
@@ -47,11 +47,11 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
       inputRef.current?.focus()
       // AI 컨텍스트 설정
       aiService.setContext({
-        userRole: user?.role,
+        userRole: userProfile?.role,
         currentPage: window.location.pathname
       })
     }
-  }, [isOpen, user])
+  }, [isOpen, userProfile])
 
   // 메시지 전송
   const handleSendMessage = async () => {

@@ -57,7 +57,7 @@ export default function CustomerLayout({
                 {customerMenus.map((menu) => (
                   <Link
                     key={menu.id}
-                    href={menu.href}
+                    href={menu.href as any}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       pathname === menu.href
                         ? 'bg-primary text-white'

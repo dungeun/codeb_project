@@ -23,7 +23,7 @@ export default function ChatInput({ onSend, onTyping, disabled }: ChatInputProps
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout>()
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,7 +64,7 @@ export default function ChatInput({ onSend, onTyping, disabled }: ChatInputProps
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false)
       if (onTyping) onTyping(false)
-    }, 1000)
+    }, 1000) as unknown as NodeJS.Timeout
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

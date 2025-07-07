@@ -10,18 +10,6 @@ export default function OperatorsManagementPage() {
   const [newOperator, setNewOperator] = useState({ name: '', maxChats: 5 })
   const [showAddForm, setShowAddForm] = useState(false)
 
-  // 관리자 권한 체크
-  if (userProfile?.role !== 'admin') {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">접근 권한 없음</h2>
-          <p className="text-gray-600">이 페이지는 관리자만 접근할 수 있습니다.</p>
-        </div>
-      </div>
-    )
-  }
-
   useEffect(() => {
     // 운영자 목록 구독
     const unsubscribe = chatAssignmentService.subscribeToOperators((operatorsList) => {
@@ -83,6 +71,18 @@ export default function OperatorsManagementPage() {
     if (days < 7) return `${days}일 전`
     
     return date.toLocaleDateString('ko-KR')
+  }
+
+  // 관리자 권한 체크
+  if (userProfile?.role !== 'admin') {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">접근 권한 없음</h2>
+          <p className="text-gray-600">이 페이지는 관리자만 접근할 수 있습니다.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -196,12 +196,12 @@ export default function OperatorsManagementPage() {
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                           <span className="text-gray-600 font-medium">
-                            {(operator.name || operator.displayName || operator.email || 'O').charAt(0).toUpperCase()}
+                            {(operator.name || 'O').charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="ml-3">
                           <div className="text-sm font-medium text-gray-900">
-                            {operator.name || operator.displayName || operator.email || '운영자'}
+                            {operator.name || '운영자'}
                           </div>
                           <div className="text-sm text-gray-500">
                             ID: {operator.id}

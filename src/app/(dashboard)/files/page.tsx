@@ -16,7 +16,7 @@ interface DownloadHistory {
 }
 
 export default function FilesPage() {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [activeTab, setActiveTab] = useState<'files' | 'history'>('files')
   const [files, setFiles] = useState<FileItem[]>([
     // Mock 데이터
@@ -89,7 +89,7 @@ export default function FilesPage() {
       type: file.type,
       url: URL.createObjectURL(file), // 임시 URL
       category: getFileCategory(file.type),
-      uploadedBy: user?.name || '알 수 없음',
+      uploadedBy: userProfile?.displayName || '알 수 없음',
       createdAt: new Date(),
     }))
 
@@ -109,7 +109,7 @@ export default function FilesPage() {
       id: `dl-${Date.now()}`,
       fileId: file.id,
       fileName: file.name,
-      downloadedBy: user?.name || '알 수 없음',
+      downloadedBy: userProfile?.displayName || '알 수 없음',
       downloadedAt: new Date(),
       userAgent: navigator.userAgent.split(' ').pop() || 'Unknown'
     }
@@ -133,8 +133,8 @@ export default function FilesPage() {
     }
   }
 
-  const canDelete = user?.role === 'admin' || user?.role === 'team_member'
-  const canViewHistory = user?.role === 'admin' || user?.role === 'team_member'
+  const canDelete = userProfile?.role === 'admin' || userProfile?.role === 'manager' || userProfile?.role === 'developer'
+  const canViewHistory = userProfile?.role === 'admin' || userProfile?.role === 'manager' || userProfile?.role === 'developer'
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('ko-KR', {
@@ -186,7 +186,7 @@ export default function FilesPage() {
       {activeTab === 'files' && (
         <>
           {/* 업로드 영역 */}
-          {(user?.role === 'admin' || user?.role === 'team_member') && (
+          {(userProfile?.role === 'admin' || userProfile?.role === 'manager' || userProfile?.role === 'developer') && (
             <div className="card">
               <h2 className="text-lg font-semibold mb-4">파일 업로드</h2>
               <FileUpload 

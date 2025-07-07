@@ -70,7 +70,7 @@ const statusColors: Record<Project['status'], string> = {
 }
 
 export default function ProjectsPage() {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [projects, setProjects] = useState<Project[]>(mockProjects)
   const [selectedTab, setSelectedTab] = useState<'all' | 'active' | 'completed'>('all')
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
@@ -112,7 +112,7 @@ export default function ProjectsPage() {
           <p className="text-gray-600 mt-1">전체 프로젝트를 관리하고 진행 상황을 확인합니다.</p>
         </div>
         
-        {user?.role === 'admin' && (
+        {userProfile?.role === 'admin' && (
           <button 
             onClick={() => setShowCreateModal(true)}
             className="btn btn-primary"
@@ -250,7 +250,7 @@ export default function ProjectsPage() {
                       <Link href={`/projects/${project.id}/kanban`} className="text-purple-600 hover:text-purple-700">
                         칸반보드
                       </Link>
-                      {user?.role === 'admin' && (
+                      {userProfile?.role === 'admin' && (
                         <button className="text-gray-600 hover:text-gray-900">
                           수정
                         </button>

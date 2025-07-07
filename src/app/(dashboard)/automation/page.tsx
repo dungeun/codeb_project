@@ -83,7 +83,7 @@ const mockWorkflows: Workflow[] = [
 ]
 
 export default function AutomationPage() {
-  const { user } = useAuth()
+  const { userProfile } = useAuth()
   const [workflows, setWorkflows] = useState<Workflow[]>(mockWorkflows)
   const [showBuilder, setShowBuilder] = useState(false)
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | undefined>()
@@ -91,7 +91,7 @@ export default function AutomationPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | undefined>()
 
   // 권한 체크
-  if (user?.role !== 'admin' && user?.role !== 'team_member') {
+  if (userProfile?.role !== 'admin' && userProfile?.role !== 'manager' && userProfile?.role !== 'developer') {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -119,7 +119,7 @@ export default function AutomationPage() {
       const newWorkflow: Workflow = {
         id: Date.now().toString(),
         ...workflowData as any,
-        createdBy: user?.name || 'Unknown',
+        createdBy: userProfile?.displayName || 'Unknown',
         createdAt: new Date(),
         updatedAt: new Date(),
         runCount: 0
@@ -164,7 +164,6 @@ export default function AutomationPage() {
 
         <WorkflowBuilder
           workflow={editingWorkflow}
-          template={selectedTemplate}
           onSave={handleSaveWorkflow}
           onCancel={() => {
             setShowBuilder(false)

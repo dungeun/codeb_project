@@ -58,7 +58,7 @@ export class ChatAssignmentService {
       
       const operators = snapshot.val()
       console.log('All operators:', operators)
-      let bestOperator: { id: string; activeChats: number } | null = null
+      let bestOperator: { id: string; activeChats: number } | undefined
       
       // 온라인이고 여유가 있는 운영자 중 가장 여유가 많은 운영자 선택
       Object.entries(operators).forEach(([operatorId, operator]: [string, any]) => {
@@ -287,9 +287,10 @@ export class ChatAssignmentService {
         
         // 해당 고객의 활성 할당 찾기
         for (const [id, assignment] of Object.entries(assignments)) {
-          if (assignment.customerId === customerId && 
-              assignment.operatorId === operatorId && 
-              assignment.status === 'active') {
+          const assign = assignment as any
+          if (assign.customerId === customerId && 
+              assign.operatorId === operatorId && 
+              assign.status === 'active') {
             // completeChat 호출하여 양방향 종료
             await this.completeChat(id)
             return
@@ -421,38 +422,6 @@ export class ChatAssignmentService {
     }
   }
 
-  // 운영자에게 할당된 고객 목록 가져오기
-  async getCustomersForOperator(operatorId: string): Promise<ChatAssignment[]> {
-    try {
-      const assignmentsRef = ref(database, 'customerAssignments')
-      const snapshot = await get(assignmentsRef)
-      
-      const assignments: ChatAssignment[] = []
-      
-      if (snapshot.exists()) {
-        Object.entries(snapshot.val()).forEach(([customerId, assignment]: [string, any]) => {
-          if (assignment.operatorId === operatorId && assignment.status === 'active') {
-            assignments.push({
-              id: customerId,
-              customerId,
-              customerName: assignment.customerName,
-              operatorId: assignment.operatorId,
-              operatorName: '', // Will be filled later if needed
-              status: assignment.status,
-              createdAt: assignment.createdAt,
-              acceptedAt: assignment.acceptedAt,
-              lastMessageAt: assignment.lastMessageAt
-            })
-          }
-        })
-      }
-      
-      return assignments
-    } catch (error) {
-      console.error('Error getting customers for operator:', error)
-      return []
-    }
-  }
 
   // 운영자의 활성 채팅 수 업데이트
   private async updateOperatorActiveChats(operatorId: string, delta: number): Promise<void> {

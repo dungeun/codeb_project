@@ -15,10 +15,11 @@ const triggerTypes = [
 // 액션 타입 설정
 const actionTypes = [
   { value: 'notification', label: '알림 전송', icon: '🔔', description: '사용자에게 알림 전송' },
-  { value: 'task_creation', label: '작업 생성', icon: '📋', description: '새로운 작업 자동 생성' },
-  { value: 'status_update', label: '상태 업데이트', icon: '🔄', description: '프로젝트나 작업 상태 변경' },
+  { value: 'task', label: '작업 생성', icon: '📋', description: '새로운 작업 자동 생성' },
   { value: 'email', label: '이메일 전송', icon: '📧', description: '이메일 자동 발송' },
-  { value: 'api_call', label: 'API 호출', icon: '🌐', description: '외부 API 연동' },
+  { value: 'api', label: 'API 호출', icon: '🌐', description: '외부 API 연동' },
+  { value: 'condition', label: '조건 분기', icon: '🔀', description: '조건에 따른 분기 처리' },
+  { value: 'wait', label: '대기', icon: '⏱️', description: '일정 시간 대기' },
 ]
 
 // 이벤트 타입
@@ -279,7 +280,7 @@ export default function WorkflowBuilder({ workflow, onSave, onCancel }: Workflow
                             `메시지: ${action.config.message}`}
                           {action.type === 'email' && action.config.to && 
                             `받는 사람: ${action.config.to}`}
-                          {action.type === 'task_creation' && action.config.title && 
+                          {action.type === 'task' && action.config.title && 
                             `작업: ${action.config.title}`}
                         </div>
                       </div>
@@ -351,11 +352,11 @@ function ActionModal({
   onClose 
 }: { 
   action: WorkflowAction | null
-  actionTypes: typeof actionTypes
+  actionTypes: Array<{ value: string; label: string; icon: string; description: string }>
   onSave: (action: WorkflowAction) => void
   onClose: () => void 
 }) {
-  const [selectedType, setSelectedType] = useState(action?.type || 'notification')
+  const [selectedType, setSelectedType] = useState<WorkflowAction['type']>(action?.type || 'notification')
   const [config, setConfig] = useState(action?.config || {})
 
   const handleSave = () => {
@@ -472,7 +473,7 @@ function ActionModal({
             </>
           )}
 
-          {selectedType === 'task_creation' && (
+          {selectedType === 'task' && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -516,39 +517,41 @@ function ActionModal({
             </>
           )}
 
-          {selectedType === 'status_update' && (
+          {selectedType === 'condition' && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  대상
-                </label>
-                <select
-                  value={config.target || ''}
-                  onChange={(e) => setConfig({ ...config, target: e.target.value })}
-                  className="input"
-                >
-                  <option value="">선택</option>
-                  <option value="project">프로젝트</option>
-                  <option value="task">작업</option>
-                  <option value="invoice">청구서</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  변경할 상태
+                  조건식
                 </label>
                 <input
                   type="text"
-                  value={config.status || ''}
-                  onChange={(e) => setConfig({ ...config, status: e.target.value })}
+                  value={config.expression || ''}
+                  onChange={(e) => setConfig({ ...config, expression: e.target.value })}
                   className="input"
-                  placeholder="예: completed, in_progress"
+                  placeholder="예: status === 'completed'"
                 />
               </div>
             </>
           )}
 
-          {selectedType === 'api_call' && (
+          {selectedType === 'wait' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  대기 시간 (초)
+                </label>
+                <input
+                  type="number"
+                  value={config.duration || ''}
+                  onChange={(e) => setConfig({ ...config, duration: parseInt(e.target.value) })}
+                  className="input"
+                  placeholder="60"
+                />
+              </div>
+            </>
+          )}
+
+          {selectedType === 'api' && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -8,7 +8,7 @@ import AIInsights from '@/components/ai/AIInsights'
 import { useAuth } from '@/lib/auth-context'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -26,7 +26,7 @@ export default function DashboardPage() {
           <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full" />
           <div className="absolute -right-5 -bottom-5 w-20 h-20 bg-white/10 rounded-full" />
           <h1 className="text-3xl font-bold mb-2 relative z-10">
-            {getGreeting()}, {user?.name}님!
+            {getGreeting()}, {userProfile?.displayName || '사용자'}님!
           </h1>
           <p className="text-lg opacity-90 relative z-10">
             프로젝트 진행 상황을 한눈에 확인하세요

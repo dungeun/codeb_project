@@ -64,13 +64,13 @@ const mockFinancialSummary: FinancialSummary = {
 const COLORS = ['#4f7eff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
 export default function FinancePage() {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'quarter' | 'year'>('year')
   const [activeTab, setActiveTab] = useState<'overview' | 'expenses' | 'budget' | 'invoices'>('overview')
   const [financialData] = useState<FinancialSummary>(mockFinancialSummary)
 
   // 권한 체크
-  if (user?.role !== 'admin') {
+  if (userProfile?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">

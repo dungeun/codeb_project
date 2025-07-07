@@ -5,22 +5,22 @@ import { AuthProvider, useAuth } from '../auth-context'
 
 // Test component that uses the auth context
 const TestComponent = () => {
-  const { user, login, logout, loading } = useAuth()
+  const { user, userProfile, signIn, logout, loading } = useAuth()
 
   return (
     <div>
       {loading && <div>Loading...</div>}
       {user ? (
         <div>
-          <div>Welcome, {user.name}!</div>
-          <div>Role: {user.role}</div>
+          <div>Welcome, {userProfile?.displayName}!</div>
+          <div>Role: {userProfile?.role}</div>
           <button onClick={logout}>Logout</button>
         </div>
       ) : (
         <div>
           <div>Not logged in</div>
           <button 
-            onClick={() => login('test@example.com', 'password123!')}
+            onClick={() => signIn('test@example.com', 'password123!')}
           >
             Login
           </button>
@@ -113,12 +113,12 @@ describe('AuthContext', () => {
     const user = userEvent.setup()
     
     const TestComponentWithValidation = () => {
-      const { login } = useAuth()
+      const { signIn } = useAuth()
       const [error, setError] = React.useState('')
 
       const handleLogin = async () => {
         try {
-          await login('test@example.com', 'weak')
+          await signIn('test@example.com', 'weak')
         } catch (err: any) {
           setError(err.message)
         }
@@ -205,18 +205,18 @@ describe('AuthContext', () => {
     const user = userEvent.setup()
     
     const TestComponentWithRoles = () => {
-      const { login, user: currentUser } = useAuth()
+      const { signIn, user: currentUser, userProfile } = useAuth()
 
       return (
         <div>
           {currentUser ? (
-            <div>Role: {currentUser.role}</div>
+            <div>Role: {userProfile?.role}</div>
           ) : (
             <div>
-              <button onClick={() => login('admin@codeb.com', 'admin123!')}>
+              <button onClick={() => signIn('admin@codeb.com', 'admin123!')}>
                 Login as Admin
               </button>
-              <button onClick={() => login('customer@test.com', 'customer123!')}>
+              <button onClick={() => signIn('customer@test.com', 'customer123!')}>
                 Login as Customer
               </button>
             </div>

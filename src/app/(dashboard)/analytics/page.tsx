@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
               stroke="#4f7eff" 
               fillOpacity={1} 
               fill="url(#trendGradient)"
-              strokeDasharray={(data: any) => data.predicted ? "5 5" : "0"}
+              strokeDasharray="5 5"
             />
           </AreaChart>
         </ResponsiveContainer>
