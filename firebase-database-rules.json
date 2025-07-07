@@ -1,0 +1,43 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "users": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid || (auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "isOnline": {
+          ".write": "$uid === auth.uid"
+        },
+        "lastLogin": {
+          ".write": "$uid === auth.uid"
+        }
+      }
+    },
+    "chatRooms": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "messages": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$messageId": {
+          ".validate": "newData.hasChildren(['senderId', 'message', 'timestamp'])"
+        }
+      }
+    },
+    "typing": {
+      "$roomId": {
+        "$userId": {
+          ".read": "auth != null",
+          ".write": "$userId === auth.uid"
+        }
+      }
+    }
+  }
+}

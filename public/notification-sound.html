@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notification Sound Generator</title>
+</head>
+<body>
+    <h1>알림음 생성기</h1>
+    <button onclick="playNotificationSound()">알림음 재생</button>
+    <button onclick="downloadSound()">다운로드</button>
+    
+    <script>
+    // Web Audio API를 사용한 알림음 생성
+    function createNotificationSound() {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const duration = 0.3; // 0.3초
+        
+        // 첫 번째 톤 (높은음)
+        const oscillator1 = audioContext.createOscillator();
+        const gainNode1 = audioContext.createGain();
+        
+        oscillator1.frequency.value = 880; // A5 음
+        oscillator1.type = 'sine';
+        
+        gainNode1.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        oscillator1.connect(gainNode1);
+        gainNode1.connect(audioContext.destination);
+        
+        // 두 번째 톤 (더 높은음)
+        setTimeout(() => {
+            const oscillator2 = audioContext.createOscillator();
+            const gainNode2 = audioContext.createGain();
+            
+            oscillator2.frequency.value = 1320; // E6 음
+            oscillator2.type = 'sine';
+            
+            gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator2.connect(gainNode2);
+            gainNode2.connect(audioContext.destination);
+            
+            oscillator2.start();
+            oscillator2.stop(audioContext.currentTime + duration);
+        }, 150);
+        
+        oscillator1.start();
+        oscillator1.stop(audioContext.currentTime + duration);
+    }
+    
+    function playNotificationSound() {
+        createNotificationSound();
+    }
+    
+    // 간단한 비프음 데이터 URL
+    const simpleBeepDataURL = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTcIG2m98OScTgwOUarm7blmFgU7k9n1yHMlBSeDzvTWgjEEFWq+8+OWT'+'AsOUqzn77ViFAg5k9n1yHQnBiiCzPLbiTUHGWi78OScTgwOUqzl77RmGAU7k9n1x3MlBSh+zPDei'+'TYIGGq+8eCcUAoLTqjj77ZpGAU7k9f1yHQnBSh+zPDeiTYIGGq+8eCcUAoLTqjj77VpGAU7k9f1yHQnBSh+zPDeiTYIGGq+8eCcUAoLTqjj77VpGAU7k9f1yHQnBSh+zPDeiTYIGGq+8eCcUAoLTqjj77VpGAU7k9f1yHQnBSh9y/HeiTYIGGq+8eCcUAoLTqjj77VpGAU7k9f1yHQnBSh9y/HeiTYIGGq+8eCcUAoLTqjj77VpGAU7k9f1yHQnBSh9y/HeiTYIGGq+8eCcUAoLTqjj77VpGAU7k9f1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpGAU7k9f1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpGAU7k9f1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpGAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpGAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpGAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpGAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpGAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eCcTgwLTqjj77VpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77ZpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77ZpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77ZpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77ZpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77ZpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77ZpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77ZpHAU7k9n1yHQoBiiEzPDbiTcIGGq+8eGcTgwLTqjj77Zp';
+    
+    function downloadSound() {
+        const link = document.createElement('a');
+        link.href = simpleBeepDataURL;
+        link.download = 'notification.wav';
+        link.click();
+    }
+    </script>
+</body>
+</html>
