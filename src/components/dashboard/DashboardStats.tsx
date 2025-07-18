@@ -214,18 +214,26 @@ export default function DashboardStats() {
         setLoading(false)
 
         // 현재 통계 저장 (하루에 한 번)
-        const lastSaved = localStorage.getItem('lastStatsSaved')
-        const today = new Date().toDateString()
-        if (lastSaved !== today && data.completedTasks > 0) {
-          await statsService.saveDailyStats(userProfile.uid, {
-            completedTasks: data.completedTasks,
-            activeTasks: data.activeTasks,
-            activeProjects: data.activeProjects,
-            monthlyRevenue: data.monthlyRevenue,
-            activeCustomers: data.activeCustomers
-          })
-          localStorage.setItem('lastStatsSaved', today)
+        const saveStats = async () => {
+          const lastSaved = localStorage.getItem('lastStatsSaved')
+          const today = new Date().toDateString()
+          if (lastSaved !== today && data.completedTasks > 0) {
+            try {
+              await statsService.saveDailyStats(userProfile.uid, {
+                completedTasks: data.completedTasks,
+                activeTasks: data.activeTasks,
+                activeProjects: data.activeProjects,
+                monthlyRevenue: data.monthlyRevenue,
+                activeCustomers: data.activeCustomers
+              })
+              localStorage.setItem('lastStatsSaved', today)
+            } catch (error) {
+              console.error('Error saving stats:', error)
+            }
+          }
         }
+        
+        saveStats()
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
         setLoading(false)
