@@ -120,30 +120,38 @@ export default function DashboardStats() {
           
           const totalProjects = projectArray.length
           const activeProjects = projectArray.filter(p => p.status === 'in_progress').length
-          const completedTasks = projectArray.reduce((sum, p) => sum + (p.completedTasks || 0), 0)
-          const activeTasks = projectArray.reduce((sum, p) => sum + (p.activeTasks || 0), 0)
+          
+          // 실제 tasks 데이터에서 직접 카운트
+          const tasksRef = ref(db, 'tasks')
+          onValue(tasksRef, (tasksSnapshot) => {
+            const tasks = tasksSnapshot.val() || {}
+            const taskArray = Object.values(tasks) as any[]
+            
+            const completedTasks = taskArray.filter(t => t.status === 'completed').length
+            const activeTasks = taskArray.filter(t => t.status === 'in_progress' || t.status === 'pending').length
 
-          setData(prev => {
-            // 이전 값 저장 및 변화량 계산
-            const taskCompletionChange = prev.completedTasks > 0 
-              ? Math.round(((completedTasks - prev.completedTasks) / prev.completedTasks) * 100)
-              : 0
-            const newActiveTasks = activeTasks - prev.activeTasks
-            const projectChange = activeProjects - prev.activeProjects
+            setData(prev => {
+              // 이전 값 저장 및 변화량 계산
+              const taskCompletionChange = prev.completedTasks > 0 
+                ? Math.round(((completedTasks - prev.completedTasks) / prev.completedTasks) * 100)
+                : 0
+              const newActiveTasks = activeTasks - prev.activeTasks
+              const projectChange = activeProjects - prev.activeProjects
 
-            return {
-              ...prev,
-              totalProjects,
-              activeProjects,
-              completedTasks,
-              activeTasks,
-              prevCompletedTasks: prev.completedTasks || completedTasks,
-              prevActiveTasks: prev.activeTasks || activeTasks,
-              prevActiveProjects: prev.activeProjects || activeProjects,
-              taskCompletionChange,
-              newActiveTasks,
-              projectChange
-            }
+              return {
+                ...prev,
+                totalProjects,
+                activeProjects,
+                completedTasks,
+                activeTasks,
+                prevCompletedTasks: prev.completedTasks || completedTasks,
+                prevActiveTasks: prev.activeTasks || activeTasks,
+                prevActiveProjects: prev.activeProjects || activeProjects,
+                taskCompletionChange,
+                newActiveTasks,
+                projectChange
+              }
+            })
           })
         })
 
@@ -230,6 +238,7 @@ export default function DashboardStats() {
     return () => {
       const db = getDatabase(app)
       off(ref(db, 'projects'))
+      off(ref(db, 'tasks'))
       off(ref(db, 'messages'))
       off(ref(db, 'financial'))
       off(ref(db, 'users'))
