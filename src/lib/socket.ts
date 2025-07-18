@@ -1,85 +1,81 @@
-import { io, Socket } from 'socket.io-client'
-import { detectServiceUrls } from '@/config/services'
+// Firebase Realtime Database를 사용하도록 변경
+import realtimeService from './realtime-service'
 
 class SocketService {
-  private socket: Socket | null = null
-  private serverUrl: string | null = null
+  private eventCallbacks: Map<string, (...args: any[]) => void> = new Map()
 
   async connect(userData: { id: string; name: string; role: string }) {
-    if (this.socket?.connected) return
-
-    // 서버 URL 자동 감지
-    if (!this.serverUrl) {
-      const urls = await detectServiceUrls()
-      this.serverUrl = urls.socketUrl || 'http://localhost:3003'
-      console.log(`Socket.io 서버 URL: ${this.serverUrl}`)
-    }
-
-    this.socket = io(this.serverUrl || '', {
-      autoConnect: true,
-    })
-
-    this.socket.on('connect', () => {
-      console.log('Socket connected:', this.socket?.id)
-      this.socket?.emit('authenticate', userData)
-    })
-
-    this.socket.on('disconnect', () => {
-      console.log('Socket disconnected')
-    })
-
-    this.socket.on('error', (error) => {
-      console.error('Socket error:', error)
-    })
-
-    return this.socket
+    // Firebase Realtime Database 연결
+    await realtimeService.connect(userData)
+    return this
   }
 
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect()
-      this.socket = null
-    }
+    // Firebase Realtime Database 연결 해제
+    realtimeService.disconnect()
   }
 
   joinRoom(roomId: string) {
-    this.socket?.emit('join-room', roomId)
+    // Firebase Realtime Database로 방 참여
+    realtimeService.joinRoom(roomId)
   }
 
   sendMessage(roomId: string, message: { content: string; attachments?: any[] }) {
-    this.socket?.emit('send-message', { roomId, message })
+    // Firebase Realtime Database로 메시지 전송
+    realtimeService.sendMessage(roomId, message)
   }
 
   setTyping(roomId: string, isTyping: boolean) {
-    this.socket?.emit('typing', { roomId, isTyping })
+    // Firebase Realtime Database로 타이핑 상태 설정
+    realtimeService.setTyping(roomId, isTyping)
   }
 
   markMessagesAsRead(roomId: string, messageIds: string[]) {
-    this.socket?.emit('mark-read', { roomId, messageIds })
+    // Firebase Realtime Database로 읽음 표시
+    realtimeService.markMessagesAsRead(roomId, messageIds)
   }
 
   shareFile(roomId: string, file: any) {
-    this.socket?.emit('share-file', { roomId, file })
+    // Firebase Realtime Database로 파일 공유
+    realtimeService.shareFile(roomId, file)
   }
 
   startScreenShare(roomId: string) {
-    this.socket?.emit('screen-share-start', { roomId })
+    // 화면 공유는 WebRTC나 다른 방식으로 구현 필요
+    console.log('Screen share started for room:', roomId)
+    // 이벤트 알림만 Firebase로 전송
+    realtimeService.sendMessage(roomId, {
+      content: '화면 공유를 시작했습니다.',
+      attachments: []
+    })
   }
 
   stopScreenShare(roomId: string) {
-    this.socket?.emit('screen-share-stop', { roomId })
+    // 화면 공유 중지
+    console.log('Screen share stopped for room:', roomId)
+    realtimeService.sendMessage(roomId, {
+      content: '화면 공유를 종료했습니다.',
+      attachments: []
+    })
   }
 
   on(event: string, callback: (...args: any[]) => void) {
-    this.socket?.on(event, callback)
+    // Firebase Realtime Database 이벤트 리스너 등록
+    this.eventCallbacks.set(event, callback)
+    realtimeService.on(event, callback)
   }
 
   off(event: string, callback?: (...args: any[]) => void) {
-    this.socket?.off(event, callback)
+    // Firebase Realtime Database 이벤트 리스너 해제
+    if (callback) {
+      this.eventCallbacks.delete(event)
+    }
+    realtimeService.off(event)
   }
 
   getSocket() {
-    return this.socket
+    // Socket.IO 호환성을 위한 더미 반환
+    return null
   }
 }
 

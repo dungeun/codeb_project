@@ -25,24 +25,33 @@ export default function OnlineStatus({ compact = false }: OnlineStatusProps) {
   useEffect(() => {
     if (!user || !userProfile) return
 
-    // Socket 연결이 없다면 연결
-    if (!socketService.getSocket()?.connected) {
-      socketService.connect({
+    // Firebase 연결
+    const connectAndListen = async () => {
+      await socketService.connect({
         id: user.uid,
         name: userProfile.displayName,
         role: userProfile.role
       })
+
+      // Firebase presence 리스닝
+      socketService.on('presence', (presence: any) => {
+        const users: User[] = Object.entries(presence || {}).map(([id, data]: [string, any]) => ({
+          id,
+          name: data.name,
+          role: data.role,
+          status: data.isOnline ? 'online' : 'offline' as 'online' | 'offline',
+          lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined
+        }))
+        setOnlineUsers(users.filter(u => u.status === 'online'))
+      })
     }
 
-    // 온라인 사용자 목록 업데이트
-    socketService.on('users-update', (users: User[]) => {
-      setOnlineUsers(users.filter(u => u.status === 'online'))
-    })
+    connectAndListen()
 
     return () => {
-      socketService.off('users-update')
+      socketService.off('presence')
     }
-  }, [user])
+  }, [user, userProfile])
 
   const getRoleColor = (role: string) => {
     switch (role) {

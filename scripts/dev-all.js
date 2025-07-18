@@ -26,13 +26,6 @@ const processes = [
     args: ['run', 'dev'],
     color: colors.cyan,
     ready: 'ready on'
-  },
-  {
-    name: 'Servers',
-    command: 'npm',
-    args: ['run', 'servers'],
-    color: colors.green,
-    ready: '모든 서버가 성공적으로 시작되었습니다'
   }
 ];
 
