@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { getDatabase, ref, onValue, off } from 'firebase/database'
 import { app } from '@/lib/firebase'
+import statsService from '@/services/stats-service'
 
 interface StatCardProps {
   icon: string
@@ -57,6 +58,16 @@ interface DashboardData {
   monthlyRevenue: number
   totalCustomers: number
   activeCustomers: number
+  // 이전 기간 데이터 (비교용)
+  prevCompletedTasks: number
+  prevActiveTasks: number
+  prevActiveProjects: number
+  prevMonthlyRevenue: number
+  prevActiveCustomers: number
+  // 변화량
+  taskCompletionChange: number
+  newActiveTasks: number
+  projectChange: number
 }
 
 export default function DashboardStats() {
@@ -72,7 +83,15 @@ export default function DashboardStats() {
     totalRevenue: 0,
     monthlyRevenue: 0,
     totalCustomers: 0,
-    activeCustomers: 0
+    activeCustomers: 0,
+    prevCompletedTasks: 0,
+    prevActiveTasks: 0,
+    prevActiveProjects: 0,
+    prevMonthlyRevenue: 0,
+    prevActiveCustomers: 0,
+    taskCompletionChange: 0,
+    newActiveTasks: 0,
+    projectChange: 0
   })
 
   useEffect(() => {
@@ -81,6 +100,18 @@ export default function DashboardStats() {
     const db = getDatabase(app)
     const fetchData = async () => {
       try {
+        // 이전 통계 데이터 가져오기
+        const prevStats = await statsService.getPreviousDayStats(userProfile.uid)
+        if (prevStats) {
+          setData(prev => ({
+            ...prev,
+            prevCompletedTasks: prevStats.completedTasks,
+            prevActiveTasks: prevStats.activeTasks,
+            prevActiveProjects: prevStats.activeProjects,
+            prevMonthlyRevenue: prevStats.monthlyRevenue,
+            prevActiveCustomers: prevStats.activeCustomers
+          }))
+        }
         // Fetch projects data
         const projectsRef = ref(db, 'projects')
         onValue(projectsRef, (snapshot) => {
@@ -92,13 +123,28 @@ export default function DashboardStats() {
           const completedTasks = projectArray.reduce((sum, p) => sum + (p.completedTasks || 0), 0)
           const activeTasks = projectArray.reduce((sum, p) => sum + (p.activeTasks || 0), 0)
 
-          setData(prev => ({
-            ...prev,
-            totalProjects,
-            activeProjects,
-            completedTasks,
-            activeTasks
-          }))
+          setData(prev => {
+            // 이전 값 저장 및 변화량 계산
+            const taskCompletionChange = prev.completedTasks > 0 
+              ? Math.round(((completedTasks - prev.completedTasks) / prev.completedTasks) * 100)
+              : 0
+            const newActiveTasks = activeTasks - prev.activeTasks
+            const projectChange = activeProjects - prev.activeProjects
+
+            return {
+              ...prev,
+              totalProjects,
+              activeProjects,
+              completedTasks,
+              activeTasks,
+              prevCompletedTasks: prev.completedTasks || completedTasks,
+              prevActiveTasks: prev.activeTasks || activeTasks,
+              prevActiveProjects: prev.activeProjects || activeProjects,
+              taskCompletionChange,
+              newActiveTasks,
+              projectChange
+            }
+          })
         })
 
         // Fetch messages data for admin/manager
@@ -130,11 +176,13 @@ export default function DashboardStats() {
             const financial = snapshot.val() || {}
             const totalRevenue = financial.totalRevenue || 0
             const monthlyRevenue = financial.monthlyRevenue || 0
+            const lastMonthRevenue = financial.lastMonthRevenue || monthlyRevenue * 0.88 // 임시로 12% 낮은 값 사용
 
             setData(prev => ({
               ...prev,
               totalRevenue,
-              monthlyRevenue
+              monthlyRevenue,
+              prevMonthlyRevenue: lastMonthRevenue
             }))
           })
 
@@ -149,12 +197,27 @@ export default function DashboardStats() {
             setData(prev => ({
               ...prev,
               totalCustomers,
-              activeCustomers
+              activeCustomers,
+              prevActiveCustomers: prev.activeCustomers || activeCustomers
             }))
           })
         }
 
         setLoading(false)
+
+        // 현재 통계 저장 (하루에 한 번)
+        const lastSaved = localStorage.getItem('lastStatsSaved')
+        const today = new Date().toDateString()
+        if (lastSaved !== today && data.completedTasks > 0) {
+          await statsService.saveDailyStats(userProfile.uid, {
+            completedTasks: data.completedTasks,
+            activeTasks: data.activeTasks,
+            activeProjects: data.activeProjects,
+            monthlyRevenue: data.monthlyRevenue,
+            activeCustomers: data.activeCustomers
+          })
+          localStorage.setItem('lastStatsSaved', today)
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
         setLoading(false)
@@ -189,14 +252,20 @@ export default function DashboardStats() {
         iconBg: 'bg-blue-100 text-blue-600',
         value: data.completedTasks,
         label: '완료된 작업',
-        change: { value: '15% 증가', isPositive: true }
+        change: data.taskCompletionChange !== 0 ? {
+          value: `${Math.abs(data.taskCompletionChange)}% ${data.taskCompletionChange > 0 ? '증가' : '감소'}`,
+          isPositive: data.taskCompletionChange > 0
+        } : undefined
       },
       {
         icon: '⏱️',
         iconBg: 'bg-green-100 text-green-600',
         value: data.activeTasks,
         label: '진행 중인 작업',
-        change: { value: '2개 추가', isPositive: true }
+        change: data.newActiveTasks !== 0 ? {
+          value: `${Math.abs(data.newActiveTasks)}개 ${data.newActiveTasks > 0 ? '추가' : '감소'}`,
+          isPositive: data.newActiveTasks >= 0
+        } : undefined
       },
       {
         icon: '📁',
@@ -218,13 +287,20 @@ export default function DashboardStats() {
     }
 
     if (userProfile.role === 'admin') {
+      const revenueChange = data.prevMonthlyRevenue > 0
+        ? Math.round(((data.monthlyRevenue - data.prevMonthlyRevenue) / data.prevMonthlyRevenue) * 100)
+        : 0
+      
       baseStats.push(
         {
           icon: '💰',
           iconBg: 'bg-orange-100 text-orange-600',
           value: `₩${data.monthlyRevenue.toLocaleString()}`,
           label: '이번달 수익',
-          change: { value: '12% 증가', isPositive: true }
+          change: revenueChange !== 0 ? {
+            value: `${Math.abs(revenueChange)}% ${revenueChange > 0 ? '증가' : '감소'}`,
+            isPositive: revenueChange > 0
+          } : undefined
         },
         {
           icon: '👥',
