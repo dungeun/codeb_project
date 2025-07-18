@@ -18,7 +18,8 @@
     "create-accounts": "node scripts/create-test-accounts.js",
     "add-tasks": "tsx scripts/add-sample-tasks.ts",
     "migrate-task-status": "node -r dotenv/config scripts/migrate-task-status.js",
-    "setup-ai-metrics": "node scripts/setup-ai-metrics.js"
+    "setup-ai-metrics": "node scripts/setup-ai-metrics.js",
+    "setup-streaming": "node scripts/setup-streaming-platform-client.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

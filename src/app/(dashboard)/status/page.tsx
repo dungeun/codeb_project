@@ -53,6 +53,7 @@ export default function CustomerStatusPage() {
     
     const unsubscribe = onValue(projectsRef, (snapshot) => {
       const data = snapshot.val()
+      
       if (data) {
         const projectsList = Object.entries(data).map(([id, project]: [string, any]) => ({
           ...project,

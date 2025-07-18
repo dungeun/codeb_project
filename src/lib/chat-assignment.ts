@@ -211,8 +211,14 @@ export class ChatAssignmentService {
   ): Promise<void> {
     try {
       const operatorRef = ref(database, `operators/${operatorId}`)
+      
+      // undefined 값 필터링
+      const filteredStatus = Object.fromEntries(
+        Object.entries(status).filter(([_, value]) => value !== undefined)
+      )
+      
       await set(operatorRef, {
-        ...status,
+        ...filteredStatus,
         lastSeen: new Date().toISOString()
       })
     } catch (error) {
