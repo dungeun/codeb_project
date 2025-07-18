@@ -1,12 +1,25 @@
+// 'use client'
+//
+// import React, { useState } from 'react'
+// import { motion } from 'framer-motion'
+// import AIAssistant from '@/components/ai/AIAssistant'
+// import AIInsights from '@/components/ai/AIInsights'
+// import { useAuth } from '@/lib/auth-context'
+// import { AIAnalysis } from '@/services/ai-service'
+
+// AI 기능 임시 비활성화
 'use client'
 
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import AIAssistant from '@/components/ai/AIAssistant'
-import AIInsights from '@/components/ai/AIInsights'
-import { useAuth } from '@/lib/auth-context'
-import { AIAnalysis } from '@/services/ai-service'
+export default function AIPage() {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">AI 기능 준비 중</h1>
+      <p className="text-gray-600">AI 어시스턴트 기능이 곧 제공될 예정입니다.</p>
+    </div>
+  )
+}
 
+/* 기존 AI 페이지 코드 (비활성화)
 // 샘플 인사이트 데이터
 const sampleInsights: AIAnalysis[] = [
   {
@@ -99,7 +112,7 @@ export default function AIPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      // Header
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -117,7 +130,7 @@ export default function AIPage() {
         </button>
       </motion.div>
 
-      {/* Features Grid */}
+      // Features Grid
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {features.map((feature, idx) => (
           <motion.div
@@ -137,10 +150,10 @@ export default function AIPage() {
         ))}
       </div>
 
-      {/* AI Insights */}
+      // AI Insights
       <AIInsights />
 
-      {/* Quick Stats */}
+      // Quick Stats
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -196,7 +209,7 @@ export default function AIPage() {
         </motion.div>
       </div>
 
-      {/* Recent AI Activities */}
+      // Recent AI Activities
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -243,13 +256,13 @@ export default function AIPage() {
         </div>
       </motion.div>
 
-      {/* AI Assistant Modal */}
+      // AI Assistant Modal
       <AIAssistant 
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}
       />
 
-      {/* Insight Detail Modal */}
+      // Insight Detail Modal
       {selectedInsight && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -318,3 +331,4 @@ export default function AIPage() {
     </div>
   )
 }
+*/

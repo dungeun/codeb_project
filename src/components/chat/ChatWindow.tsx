@@ -89,7 +89,7 @@ export default function ChatWindow({ receiverId, receiverName, onClose }: ChatWi
         roomId,
         user.uid,
         userProfile.displayName,
-        userProfile.role,
+        userProfile.role === 'external' ? 'customer' : userProfile.role,
         receiverId,
         messageToSend
       )

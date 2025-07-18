@@ -2,7 +2,6 @@ import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { getDatabase } from 'firebase/database'
 import { getStorage } from 'firebase/storage'
-import { getAnalytics } from 'firebase/analytics'
 
 // Firebase 설정
 const firebaseConfig = {
@@ -26,6 +25,15 @@ export const storage = getStorage(app)
 export const googleProvider = new GoogleAuthProvider()
 
 // Analytics (브라우저에서만 초기화)
-export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null
+let analytics: any = null
+if (typeof window !== 'undefined') {
+  import('firebase/analytics').then(({ getAnalytics }) => {
+    analytics = getAnalytics(app)
+  })
+}
+export { analytics }
+
+// Export app for use in other modules
+export { app }
 
 export default app

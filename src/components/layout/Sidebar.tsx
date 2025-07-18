@@ -15,10 +15,16 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { href: '/dashboard', label: '대시보드', icon: '📊' },
   { href: '/projects', label: '프로젝트', icon: '📁' },
+  { href: '/tasks', label: '작업', icon: '✅', roles: ['admin', 'manager', 'developer'] },
+  { href: '/status', label: '프로젝트 현황', icon: '📈', roles: ['customer'] },
+  { href: '/support', label: '실시간 상담', icon: '💬', roles: ['customer'] },
+  { href: '/review', label: '프로젝트 리뷰', icon: '⭐', roles: ['customer'] },
+  { href: '/marketing', label: '마케팅', icon: '🎯', roles: ['admin', 'manager'] },
+  { href: '/clients', label: '거래처', icon: '🏢', roles: ['admin', 'manager'] },
   { href: '/files', label: '파일 관리', icon: '📄' },
-  { href: '/chat', label: '채팅', icon: '💬' },
+  { href: '/chat', label: '채팅', icon: '💬', roles: ['admin', 'manager', 'developer'] },
   { href: '/chat/multi', label: '멀티 채팅', icon: '💭', roles: ['admin', 'manager', 'developer'] },
-  { href: '/ai', label: 'AI 어시스턴트', icon: '🤖' },
+  // { href: '/ai', label: 'AI 어시스턴트', icon: '🤖' },
   { href: '/automation', label: '자동화', icon: '⚡', roles: ['admin', 'manager', 'developer'] },
   { href: '/analytics', label: '예측 분석', icon: '🔮', roles: ['admin', 'manager'] },
   { href: '/finance', label: '재무 관리', icon: '💰', roles: ['admin'] },
@@ -92,14 +98,22 @@ export default function Sidebar() {
           <p className="font-medium">{userProfile?.displayName}</p>
           <p className="text-sm text-gray-400">
             {userProfile?.role === 'admin' ? '관리자' : 
-             userProfile?.role === 'customer' ? '고객' : '팀원'}
+             userProfile?.role === 'customer' ? '고객' : 
+             userProfile?.role === 'external' ? '외부 사용자' : '팀원'}
           </p>
         </div>
         <button
-          onClick={logout}
-          className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+          onClick={async () => {
+            try {
+              await logout()
+            } catch (error) {
+              console.error('로그아웃 실패:', error)
+            }
+          }}
+          className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-white rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
         >
-          로그아웃
+          <span>🚪</span>
+          <span>로그아웃</span>
         </button>
       </div>
     </aside>

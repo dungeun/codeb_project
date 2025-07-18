@@ -27,7 +27,6 @@ export default function ChatNotifications({
   position = 'top-right' 
 }: ChatNotificationsProps) {
   const { user } = useAuth()
-  const [notifications, setNotifications] = useState<ChatNotification[]>([])
   const [isEnabled, setIsEnabled] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
 
@@ -144,11 +143,22 @@ export default function ChatNotifications({
     }
   }, [user])
 
-  const addNotification = (notification: ChatNotification) => {
+  const addNotification = async (notification: ChatNotification) => {
     if (!isEnabled) return
 
-    // 인앱 알림 추가
-    setNotifications(prev => [notification, ...prev.slice(0, 4)]) // 최대 5개 유지
+    // 헤더 알림 시스템에 통합
+    try {
+      const notificationService = (await import('@/services/notification-service')).default
+      await notificationService.createNotification({
+        userId: user!.uid,
+        type: 'info',
+        title: notification.title,
+        message: notification.content,
+        link: `/chat/${notification.roomId}`
+      })
+    } catch (error) {
+      console.error('Failed to create notification:', error)
+    }
 
     // 브라우저 알림
     if (Notification.permission === 'granted' && document.hidden) {
@@ -171,26 +181,8 @@ export default function ChatNotifications({
     if (soundEnabled) {
       playNotificationSound(notification.type)
     }
-
-    // 자동 제거 (10초 후)
-    setTimeout(() => {
-      removeNotification(notification.id)
-    }, 10000)
   }
 
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))
-  }
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ))
-  }
-
-  const clearAll = () => {
-    setNotifications([])
-  }
 
   const getNotificationIcon = (type: ChatNotification['type']) => {
     switch (type) {
@@ -204,17 +196,6 @@ export default function ChatNotifications({
     }
   }
 
-  const getNotificationColor = (type: ChatNotification['type']) => {
-    switch (type) {
-      case 'message': return 'border-blue-200 bg-blue-50'
-      case 'mention': return 'border-red-200 bg-red-50'
-      case 'join': return 'border-green-200 bg-green-50'
-      case 'leave': return 'border-gray-200 bg-gray-50'
-      case 'file': return 'border-purple-200 bg-purple-50'
-      case 'screen_share': return 'border-orange-200 bg-orange-50'
-      default: return 'border-gray-200 bg-gray-50'
-    }
-  }
 
   const playNotificationSound = (type: ChatNotification['type']) => {
     try {
@@ -229,100 +210,10 @@ export default function ChatNotifications({
     }
   }
 
-  const getPositionClass = () => {
-    switch (position) {
-      case 'top-left': return 'top-4 left-4'
-      case 'top-right': return 'top-4 right-4'
-      case 'bottom-left': return 'bottom-4 left-4'
-      case 'bottom-right': return 'bottom-4 right-4'
-      default: return 'top-4 right-4'
-    }
-  }
 
   return (
     <>
-      {/* 알림 설정 버튼 */}
-      <div className="fixed top-4 left-4 z-40">
-        <button
-          onClick={() => setIsEnabled(!isEnabled)}
-          className={`p-2 rounded-lg transition-colors ${
-            isEnabled 
-              ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-          title={isEnabled ? '알림 켜짐' : '알림 꺼짐'}
-        >
-          {isEnabled ? '🔔' : '🔕'}
-        </button>
-      </div>
-
-      {/* 알림 목록 */}
-      <div className={`fixed ${getPositionClass()} w-80 z-50 space-y-2`}>
-        <AnimatePresence>
-          {notifications.map((notification) => (
-            <motion.div
-              key={notification.id}
-              initial={{ opacity: 0, x: position.includes('right') ? 300 : -300, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: position.includes('right') ? 300 : -300, scale: 0.8 }}
-              className={`
-                p-4 rounded-lg border-2 shadow-lg cursor-pointer
-                ${getNotificationColor(notification.type)}
-                ${notification.read ? 'opacity-60' : ''}
-              `}
-              onClick={() => markAsRead(notification.id)}
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-xl flex-shrink-0">
-                  {getNotificationIcon(notification.type)}
-                </span>
-                
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-gray-900 truncate">
-                    {notification.title}
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                    {notification.content}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-500">
-                      {notification.roomName}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(notification.timestamp).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeNotification(notification.id)
-                  }}
-                  className="text-gray-400 hover:text-gray-600 ml-2"
-                >
-                  ✕
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {/* 모두 지우기 버튼 */}
-        {notifications.length > 0 && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onClick={clearAll}
-            className="w-full p-2 text-sm text-gray-600 hover:text-gray-900 transition-colors text-center"
-          >
-            모든 알림 지우기
-          </motion.button>
-        )}
-      </div>
+      {/* 채팅 알림은 react-hot-toast로만 표시, 헤더의 알림 시스템과 통합 */}
     </>
   )
 }

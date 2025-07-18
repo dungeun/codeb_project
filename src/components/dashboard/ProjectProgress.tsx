@@ -1,6 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { useAuth } from '@/lib/auth-context'
+import { getDatabase, ref, onValue, off } from 'firebase/database'
+import { app } from '@/lib/firebase'
+import Link from 'next/link'
 
 interface Step {
   id: number
@@ -8,16 +12,120 @@ interface Step {
   status: 'completed' | 'active' | 'pending'
 }
 
-export default function ProjectProgress() {
-  const steps: Step[] = [
-    { id: 1, label: '기획', status: 'completed' },
-    { id: 2, label: '디자인', status: 'completed' },
-    { id: 3, label: '개발', status: 'active' },
-    { id: 4, label: '테스트', status: 'pending' },
-    { id: 5, label: '배포', status: 'pending' },
-  ]
+interface Project {
+  id: string
+  name: string
+  status: string
+  progress: number
+  startDate: string
+  endDate: string
+  team: string[]
+  clientId: string
+}
 
-  const progress = 45
+export default function ProjectProgress() {
+  const { user, userProfile } = useAuth()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const statusSteps: Record<string, Step> = {
+    planning: { id: 1, label: '기획', status: 'completed' },
+    design: { id: 2, label: '디자인', status: 'completed' },
+    development: { id: 3, label: '개발', status: 'active' },
+    testing: { id: 4, label: '테스트', status: 'pending' },
+    completed: { id: 5, label: '완료', status: 'pending' },
+  }
+
+  useEffect(() => {
+    if (!user || !userProfile) return
+
+    const db = getDatabase(app)
+    const projectsRef = ref(db, 'projects')
+    
+    onValue(projectsRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const projectsList = Object.entries(data).map(([id, project]: [string, any]) => ({
+          id,
+          ...project
+        }))
+        
+        // 사용자 권한에 따른 필터링
+        let filteredProjects = projectsList
+        if (userProfile.role === 'customer') {
+          filteredProjects = projectsList.filter(p => p.clientId === user.uid)
+        } else if (userProfile.role === 'developer') {
+          filteredProjects = projectsList.filter(p => 
+            p.team?.includes(userProfile.email)
+          )
+        }
+        
+        // 진행중인 프로젝트 우선, 최신순 정렬
+        filteredProjects.sort((a, b) => {
+          if (a.status !== 'completed' && b.status === 'completed') return -1
+          if (a.status === 'completed' && b.status !== 'completed') return 1
+          return new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        })
+        
+        setProjects(filteredProjects)
+        if (filteredProjects.length > 0) {
+          setSelectedProject(filteredProjects[0])
+        }
+      }
+      setLoading(false)
+    })
+
+    return () => off(projectsRef)
+  }, [user, userProfile])
+
+  const getSteps = (projectStatus: string): Step[] => {
+    const steps: Step[] = []
+    const statusOrder = ['planning', 'design', 'development', 'testing', 'completed']
+    const currentIndex = statusOrder.indexOf(projectStatus)
+
+    statusOrder.forEach((status, index) => {
+      const step = { ...statusSteps[status] }
+      if (index < currentIndex) {
+        step.status = 'completed'
+      } else if (index === currentIndex) {
+        step.status = 'active'
+      } else {
+        step.status = 'pending'
+      }
+      steps.push(step)
+    })
+
+    return steps
+  }
+
+  if (loading) {
+    return (
+      <div className="card">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-32 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!selectedProject) {
+    return (
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4">현재 프로젝트 진행 상황</h2>
+        <p className="text-gray-500 text-center py-8">진행중인 프로젝트가 없습니다.</p>
+        {userProfile?.role === 'admin' && (
+          <Link href="/projects" className="btn btn-primary mx-auto mt-4">
+            새 프로젝트 만들기
+          </Link>
+        )}
+      </div>
+    )
+  }
+
+  const steps = getSteps(selectedProject.status)
+  const progress = selectedProject.progress || 0
 
   return (
     <div className="card">
@@ -73,20 +181,53 @@ export default function ProjectProgress() {
         </div>
       </div>
 
+      {/* Project Selector */}
+      {projects.length > 1 && (
+        <div className="flex gap-2 mt-6 mb-4">
+          {projects.slice(0, 3).map(project => (
+            <button
+              key={project.id}
+              onClick={() => setSelectedProject(project)}
+              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                selectedProject.id === project.id 
+                  ? 'bg-primary text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {project.name}
+            </button>
+          ))}
+          {projects.length > 3 && (
+            <Link href="/projects" className="px-3 py-1 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">
+              +{projects.length - 3} 더보기
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-4 mt-8">
-        <a href="#files" className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-all text-center">
+        <Link 
+          href={`/projects/${selectedProject.id}`} 
+          className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-all text-center"
+        >
+          <span className="block text-2xl mb-2">📋</span>
+          <span className="text-sm font-medium">상세 보기</span>
+        </Link>
+        <Link 
+          href="/files" 
+          className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-all text-center"
+        >
           <span className="block text-2xl mb-2">📁</span>
           <span className="text-sm font-medium">파일 확인</span>
-        </a>
-        <a href="#chat" className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-all text-center">
-          <span className="block text-2xl mb-2">💬</span>
-          <span className="text-sm font-medium">문의하기</span>
-        </a>
-        <a href="#invoice" className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-all text-center">
-          <span className="block text-2xl mb-2">📄</span>
-          <span className="text-sm font-medium">청구서</span>
-        </a>
+        </Link>
+        <Link 
+          href={`/projects/${selectedProject.id}?tab=kanban`} 
+          className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-all text-center"
+        >
+          <span className="block text-2xl mb-2">📊</span>
+          <span className="text-sm font-medium">작업 보기</span>
+        </Link>
       </div>
     </div>
   )

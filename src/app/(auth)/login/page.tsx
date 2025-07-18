@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
+import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -23,6 +24,7 @@ export default function LoginPage() {
 
     try {
       await signIn(formData.email, formData.password)
+      toast.success('로그인 성공!')
       
       // 역할에 따라 다른 페이지로 이동
       setTimeout(() => {
@@ -37,7 +39,9 @@ export default function LoginPage() {
         }
       }, 100)
     } catch (err: any) {
-      setError(err.message || '로그인에 실패했습니다.')
+      const errorMessage = err.message || '로그인에 실패했습니다.'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }

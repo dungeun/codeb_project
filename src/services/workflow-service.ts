@@ -4,6 +4,44 @@ class WorkflowService {
   private runningWorkflows: Map<string, WorkflowRun> = new Map()
 
   async executeWorkflow(workflow: Workflow): Promise<WorkflowRun> {
+    // 백엔드 서버 자동 감지
+    const workflowApiUrl = await this.detectWorkflowServer()
+    
+    try {
+      const response = await fetch(`${workflowApiUrl}/api/workflows/${workflow.id}/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const { executionId } = await response.json()
+        console.log(`워크플로우가 백엔드에서 실행됩니다. 실행 ID: ${executionId}`)
+        
+        // 실행 상태를 반환
+        return {
+          id: executionId,
+          workflowId: workflow.id,
+          status: 'running',
+          startedAt: new Date(),
+          logs: [{
+            timestamp: new Date(),
+            actionId: 'system',
+            status: 'success',
+            message: '워크플로우가 백엔드 서버에서 실행 중입니다.'
+          }]
+        }
+      }
+    } catch (error) {
+      console.log('백엔드 서버 연결 실패, 로컬에서 실행합니다.')
+    }
+    
+    if (!workflowApiUrl) {
+      console.log('워크플로우 서버를 찾을 수 없습니다. 로컬에서 실행합니다.')
+    }
+
+    // 폴백: 기존 로컬 실행
     const run: WorkflowRun = {
       id: Date.now().toString(),
       workflowId: workflow.id,
@@ -77,31 +115,118 @@ class WorkflowService {
   private async executeNotification(action: WorkflowAction, run: WorkflowRun): Promise<void> {
     const { message, recipient } = action.config
     
-    // 실제 구현에서는 NotificationService를 사용
-    await new Promise(resolve => setTimeout(resolve, 500)) // 시뮬레이션
-    
-    this.addLog(
-      run, 
-      action.id, 
-      'success', 
-      `알림 전송 완료: "${message}" → ${recipient}`,
-      { message, recipient }
-    )
+    try {
+      // Firebase 알림 서비스 사용
+      if (typeof window !== 'undefined' && 'useNotification' in window) {
+        // 브라우저 알림
+        const notificationContext = (window as any).notificationContext
+        if (notificationContext) {
+          notificationContext.addNotification({
+            type: 'info',
+            title: '워크플로우 알림',
+            message
+          })
+        }
+      }
+      
+      // 푸시 알림 전송 (백엔드 서비스 호출)
+      const workflowApiUrl = await this.detectWorkflowServer()
+      if (workflowApiUrl) {
+        const response = await fetch(`${workflowApiUrl}/api/notifications/push`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: recipient,
+          templateName: 'workflowNotification',
+          templateData: {
+            title: '워크플로우 알림',
+            message,
+            workflowId: run.workflowId
+          }
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        this.addLog(
+          run, 
+          action.id, 
+          'success', 
+          `푸시 알림 전송 완료: "${message}" → ${recipient}`,
+          { message, recipient, pushNotificationId: result.messageId }
+        )
+        } else {
+          throw new Error('푸시 알림 전송 실패')
+        }
+      }
+    } catch (error) {
+      // 폴백: 콘솔 로그
+      console.log(`[알림 시뮬레이션] 수신자: ${recipient}, 메시지: ${message}`)
+      
+      this.addLog(
+        run, 
+        action.id, 
+        'success', 
+        `알림 시뮬레이션: "${message}" → ${recipient}`,
+        { message, recipient, simulated: true }
+      )
+    }
   }
 
   private async executeEmail(action: WorkflowAction, run: WorkflowRun): Promise<void> {
     const { to, subject, body } = action.config
     
-    // 실제 구현에서는 이메일 서비스 연동
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 시뮬레이션
-    
-    this.addLog(
-      run,
-      action.id,
-      'success',
-      `이메일 전송 완료: "${subject}" → ${to}`,
-      { to, subject }
-    )
+    try {
+      // 백엔드 이메일 서비스 호출
+      const workflowApiUrl = await this.detectWorkflowServer()
+      if (workflowApiUrl) {
+        const response = await fetch(`${workflowApiUrl}/api/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to,
+          subject,
+          html: body,
+          templateName: 'workflow',
+          templateData: {
+            workflowName: action.name,
+            message: body
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('이메일 전송 실패')
+      }
+
+      const result = await response.json()
+      
+      this.addLog(
+        run,
+        action.id,
+        'success',
+        `이메일 전송 완료: "${subject}" → ${to}`,
+        { to, subject, provider: result.provider }
+      )
+      } else {
+        throw new Error('워크플로우 서버를 찾을 수 없습니다')
+      }
+    } catch (error) {
+      // 폴백: 콘솔 로그
+      console.log(`[이메일 시뮬레이션] To: ${to}, Subject: ${subject}, Body: ${body}`)
+      
+      this.addLog(
+        run,
+        action.id,
+        'success',
+        `이메일 전송 시뮬레이션: "${subject}" → ${to}`,
+        { to, subject, simulated: true }
+      )
+    }
   }
 
   private async executeTaskCreation(action: WorkflowAction, run: WorkflowRun): Promise<void> {
@@ -257,6 +382,73 @@ class WorkflowService {
   async getWorkflowHistory(workflowId: string, limit: number = 10): Promise<WorkflowRun[]> {
     // 실제 구현에서는 데이터베이스 조회
     return []
+  }
+
+  // 워크플로우 서버 자동 감지
+  private async detectWorkflowServer(): Promise<string | null> {
+    // 환경변수가 설정되어 있으면 우선 사용
+    if (process.env.NEXT_PUBLIC_WORKFLOW_API_URL) {
+      return process.env.NEXT_PUBLIC_WORKFLOW_API_URL
+    }
+
+    // 가능한 워크플로우 서버 URL들
+    const possibleUrls = [
+      'http://localhost:3004',
+      'http://127.0.0.1:3004',
+      `http://${window.location.hostname}:3004`,
+      // 프로덕션 환경에서는 같은 도메인의 다른 포트나 서브도메인 사용
+      `${window.location.protocol}//${window.location.hostname}:3004`,
+      `${window.location.protocol}//workflow.${window.location.hostname}`,
+    ]
+
+    // 각 URL에 대해 health check
+    for (const url of possibleUrls) {
+      try {
+        const response = await fetch(`${url}/health`, {
+          method: 'GET',
+          mode: 'cors',
+          signal: AbortSignal.timeout(1000) // 1초 타임아웃
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.status === 'ok') {
+            console.log(`워크플로우 서버 발견: ${url}`)
+            // 발견된 URL을 캐시 (선택사항)
+            if (typeof window !== 'undefined') {
+              window.localStorage.setItem('workflowServerUrl', url)
+            }
+            return url
+          }
+        }
+      } catch (error) {
+        // 연결 실패, 다음 URL 시도
+        continue
+      }
+    }
+
+    // 로컬 스토리지에 캐시된 URL 확인
+    if (typeof window !== 'undefined') {
+      const cachedUrl = window.localStorage.getItem('workflowServerUrl')
+      if (cachedUrl) {
+        try {
+          const response = await fetch(`${cachedUrl}/health`, {
+            method: 'GET',
+            mode: 'cors',
+            signal: AbortSignal.timeout(1000)
+          })
+          
+          if (response.ok) {
+            return cachedUrl
+          }
+        } catch (error) {
+          // 캐시된 URL도 실패하면 제거
+          window.localStorage.removeItem('workflowServerUrl')
+        }
+      }
+    }
+
+    return null
   }
 }
 

@@ -290,31 +290,210 @@ Week 4: 버그 수정 및 최적화 (20%)
   }
 
   async analyzeProject(projectId: string): Promise<AIAnalysis> {
-    // 실제 구현에서는 프로젝트 데이터를 분석
+    try {
+      // Firebase에서 실제 프로젝트 데이터 가져오기
+      const { getDatabase, ref, get } = await import('firebase/database')
+      const { app } = await import('@/lib/firebase')
+      
+      const db = getDatabase(app)
+      const projectRef = ref(db, `projects/${projectId}`)
+      const snapshot = await get(projectRef)
+      
+      if (!snapshot.exists()) {
+        // 프로젝트가 없을 경우 기본값 반환
+        return this.getDefaultAnalysis()
+      }
+      
+      const projectData = snapshot.val()
+      const aiMetrics = projectData.aiMetrics
+      
+      // AI 메트릭이 없으면 기본값 사용
+      if (!aiMetrics) {
+        return this.getDefaultAnalysis()
+      }
+      
+      // 실제 데이터 기반 분석 생성
+      const progress = projectData.progress || 0
+      const quality = aiMetrics.qualityMetrics?.codeQualityScore || projectData.quality || 90
+      const budgetUsage = projectData.budgetUsage || Math.round((aiMetrics.budgetMetrics?.budgetUsed / aiMetrics.budgetMetrics?.totalBudget) * 100) || 50
+      const efficiency = aiMetrics.efficiencyMetrics?.teamProductivityScore || projectData.efficiency || 85
+      const satisfaction = parseFloat(aiMetrics.satisfactionMetrics?.customerSatisfactionScore) || parseFloat(projectData.satisfaction) || 4.5
+      
+      // 동적 분석 내용 생성
+      const details = []
+      
+      // 진행률 분석
+      if (progress > 70) {
+        details.push(`현재 진행률 ${progress}%로 프로젝트가 막바지 단계에 있습니다`)
+      } else if (progress > 40) {
+        details.push(`현재 진행률 ${progress}%로 중간 단계를 진행 중입니다`)
+      } else {
+        details.push(`현재 진행률 ${progress}%로 초기 단계입니다`)
+      }
+      
+      // 품질 분석
+      if (quality >= 90) {
+        details.push('코드 품질이 매우 우수한 수준을 유지하고 있습니다')
+      } else if (quality >= 80) {
+        details.push('코드 품질이 양호한 수준입니다')
+      } else {
+        details.push('코드 품질 개선이 필요한 상황입니다')
+      }
+      
+      // 효율성 분석
+      if (efficiency >= 85) {
+        details.push('팀 생산성이 매우 높은 수준을 보이고 있습니다')
+      } else if (efficiency >= 70) {
+        details.push('팀 생산성이 적정 수준을 유지하고 있습니다')
+      } else {
+        details.push('팀 생산성 향상을 위한 조치가 필요합니다')
+      }
+      
+      // 예산 분석
+      if (budgetUsage > 90) {
+        details.push('예산 소진율이 높아 추가 예산 검토가 필요할 수 있습니다')
+      } else if (budgetUsage < progress - 10) {
+        details.push('예산 집행이 진행률 대비 효율적으로 관리되고 있습니다')
+      } else {
+        details.push('예산 집행이 계획대로 진행되고 있습니다')
+      }
+      
+      // 리스크 기반 우선순위 결정
+      let priority: 'low' | 'medium' | 'high' = 'medium'
+      if (aiMetrics.riskMetrics?.overallRiskLevel === 'high') {
+        priority = 'high'
+      } else if (aiMetrics.riskMetrics?.overallRiskLevel === 'low' && progress > 80) {
+        priority = 'low'
+      }
+      
+      // 동적 추천사항 생성
+      const recommendations = this.generateRecommendations(projectData, aiMetrics)
+      
+      return {
+        type: 'project',
+        title: this.generateAnalysisTitle(projectData, aiMetrics),
+        summary: this.generateAnalysisSummary(projectData, aiMetrics),
+        details,
+        metrics: {
+          progress,
+          quality,
+          budget: budgetUsage,
+          efficiency,
+          satisfaction
+        },
+        recommendations,
+        priority
+      }
+    } catch (error) {
+      console.error('프로젝트 분석 중 오류:', error)
+      return this.getDefaultAnalysis()
+    }
+  }
+  
+  private getDefaultAnalysis(): AIAnalysis {
     return {
       type: 'project',
-      title: '프로젝트 종합 분석',
-      summary: '프로젝트가 전반적으로 양호한 상태이며, 일정보다 약간 앞서 진행되고 있습니다.',
+      title: '프로젝트 분석 준비 중',
+      summary: '프로젝트 데이터를 수집하고 있습니다. 잠시 후 다시 확인해주세요.',
       details: [
-        '현재 진행률 72%로 계획 대비 5% 초과 달성',
-        '품질 지표 모든 항목에서 기준치 이상 달성',
-        '팀 생산성이 지속적으로 향상되고 있음',
-        '예산 집행이 계획 범위 내에서 효율적으로 진행'
+        '프로젝트 메트릭 초기화 중',
+        '데이터 수집 진행 중',
+        'AI 분석 엔진 준비 중'
       ],
       metrics: {
-        progress: 72,
-        quality: 95,
-        budget: 68,
-        efficiency: 88,
-        satisfaction: 4.8
+        progress: 0,
+        quality: 0,
+        budget: 0,
+        efficiency: 0,
+        satisfaction: 0
       },
       recommendations: [
-        '다음 단계 리소스 사전 준비 필요',
-        '품질 관리 프로세스 문서화 권장',
-        '고객 피드백 주기 단축 검토'
+        '프로젝트 초기 설정 완료',
+        '팀원 배정 및 역할 정의',
+        '첫 번째 마일스톤 설정'
       ],
       priority: 'medium'
     }
+  }
+  
+  private generateAnalysisTitle(projectData: any, aiMetrics: any): string {
+    const progress = projectData.progress || 0
+    const riskLevel = aiMetrics?.riskMetrics?.overallRiskLevel || 'medium'
+    
+    if (progress >= 90) {
+      return '프로젝트 마무리 단계 - 최종 점검 필요'
+    } else if (progress >= 70) {
+      return riskLevel === 'high' ? '주의 필요 - 리스크 관리 중요' : '프로젝트 후반부 - 순조로운 진행'
+    } else if (progress >= 40) {
+      return '프로젝트 중반 - 모멘텀 유지 중요'
+    } else {
+      return '프로젝트 초기 단계 - 기반 구축 중'
+    }
+  }
+  
+  private generateAnalysisSummary(projectData: any, aiMetrics: any): string {
+    const progress = projectData.progress || 0
+    const quality = aiMetrics?.qualityMetrics?.codeQualityScore || 90
+    const onTimeRate = aiMetrics?.efficiencyMetrics?.onTimeDeliveryRate || 85
+    
+    if (progress >= 80 && quality >= 90 && onTimeRate >= 80) {
+      return '프로젝트가 매우 우수한 상태로 진행되고 있으며, 성공적인 완료가 예상됩니다.'
+    } else if (progress >= 50 && quality >= 80) {
+      return '프로젝트가 전반적으로 양호한 상태이며, 일부 개선 사항에 주의가 필요합니다.'
+    } else if (onTimeRate < 70) {
+      return '일정 관리에 특별한 주의가 필요하며, 리소스 재배치를 검토해야 합니다.'
+    } else {
+      return '프로젝트 진행 상황을 면밀히 모니터링하고 있으며, 지속적인 개선을 진행 중입니다.'
+    }
+  }
+  
+  private generateRecommendations(projectData: any, aiMetrics: any): string[] {
+    const recommendations: string[] = []
+    const progress = projectData.progress || 0
+    const quality = aiMetrics?.qualityMetrics?.codeQualityScore || 90
+    const budgetUsage = projectData.budgetUsage || 50
+    const riskLevel = aiMetrics?.riskMetrics?.overallRiskLevel || 'medium'
+    const onTimeRate = aiMetrics?.efficiencyMetrics?.onTimeDeliveryRate || 85
+    
+    // 진행률 기반 추천
+    if (progress >= 80) {
+      recommendations.push('최종 테스트 및 품질 검증 강화')
+      recommendations.push('배포 준비 및 롤백 계획 수립')
+    } else if (progress >= 50) {
+      recommendations.push('중간 점검 회의를 통한 진행 상황 평가')
+    }
+    
+    // 품질 기반 추천
+    if (quality < 85) {
+      recommendations.push('코드 리뷰 프로세스 강화 필요')
+      recommendations.push('자동화 테스트 커버리지 확대')
+    }
+    
+    // 예산 기반 추천
+    if (budgetUsage > progress + 10) {
+      recommendations.push('예산 사용 현황 검토 및 비용 최적화 방안 모색')
+    }
+    
+    // 리스크 기반 추천
+    if (riskLevel === 'high') {
+      recommendations.push('식별된 리스크에 대한 즉각적인 대응 계획 수립')
+      recommendations.push('리스크 완화를 위한 추가 리소스 할당 검토')
+    }
+    
+    // 효율성 기반 추천
+    if (onTimeRate < 80) {
+      recommendations.push('작업 우선순위 재조정 및 병목 현상 해결')
+      recommendations.push('팀 커뮤니케이션 개선을 위한 일일 스탠드업 미팅 강화')
+    }
+    
+    // 기본 추천사항 추가 (최대 3개까지만 반환)
+    if (recommendations.length === 0) {
+      recommendations.push('현재 진행 상황 유지 및 모니터링 지속')
+      recommendations.push('팀원 피드백 수집 및 개선 사항 도출')
+      recommendations.push('다음 마일스톤 준비 및 리소스 사전 확보')
+    }
+    
+    return recommendations.slice(0, 3)
   }
 
   async predictProjectCompletion(projectId: string): Promise<{
@@ -322,20 +501,127 @@ Week 4: 버그 수정 및 최적화 (20%)
     confidence: number
     risks: string[]
   }> {
-    // 실제 구현에서는 ML 모델을 사용한 예측
-    const daysRemaining = Math.floor(Math.random() * 30) + 20
+    try {
+      // Firebase에서 프로젝트 데이터 가져오기
+      const { getDatabase, ref, get } = await import('firebase/database')
+      const { app } = await import('@/lib/firebase')
+      
+      const db = getDatabase(app)
+      const projectRef = ref(db, `projects/${projectId}`)
+      const snapshot = await get(projectRef)
+      
+      if (!snapshot.exists()) {
+        // 기본값 반환
+        return this.getDefaultPrediction()
+      }
+      
+      const projectData = snapshot.val()
+      const aiMetrics = projectData.aiMetrics
+      
+      // AI 예측 데이터가 있으면 사용
+      if (aiMetrics?.predictions) {
+        const risks: string[] = []
+        
+        // 리스크 분석
+        if (aiMetrics.riskMetrics?.identifiedRisks) {
+          aiMetrics.riskMetrics.identifiedRisks.forEach((risk: any) => {
+            if (risk.probability !== 'low' || risk.impact === 'high') {
+              risks.push(risk.description)
+            }
+          })
+        }
+        
+        // 추가 리스크 평가
+        if (aiMetrics.efficiencyMetrics?.onTimeDeliveryRate < 70) {
+          risks.push('과거 지연 이력으로 인한 일정 지연 가능성')
+        }
+        
+        if (aiMetrics.budgetMetrics?.budgetUsed / aiMetrics.budgetMetrics?.totalBudget > 0.9) {
+          risks.push('예산 초과로 인한 범위 축소 가능성')
+        }
+        
+        if (aiMetrics.qualityMetrics?.bugCount > 10) {
+          risks.push('품질 이슈로 인한 추가 테스트 기간 필요')
+        }
+        
+        return {
+          estimatedDate: new Date(aiMetrics.predictions.estimatedCompletionDate),
+          confidence: parseFloat(aiMetrics.predictions.completionConfidence),
+          risks: risks.length > 0 ? risks : ['현재 식별된 주요 리스크 없음']
+        }
+      }
+      
+      // AI 메트릭이 없으면 간단한 계산으로 예측
+      const startDate = new Date(projectData.startDate)
+      const endDate = new Date(projectData.endDate)
+      const progress = projectData.progress || 0
+      
+      // 남은 기간 계산
+      const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      const elapsedDays = Math.ceil((new Date().getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      const remainingDays = totalDays - elapsedDays
+      
+      // 진행률 기반 예측
+      let estimatedDaysToComplete = remainingDays
+      if (progress > 0) {
+        const daysPerPercent = elapsedDays / progress
+        estimatedDaysToComplete = Math.ceil(daysPerPercent * (100 - progress))
+      }
+      
+      const estimatedDate = new Date()
+      estimatedDate.setDate(estimatedDate.getDate() + estimatedDaysToComplete)
+      
+      // 신뢰도 계산 (진행률이 높을수록 신뢰도 증가)
+      const confidence = 0.5 + (progress / 100) * 0.4 + (progress > 50 ? 0.1 : 0)
+      
+      return {
+        estimatedDate,
+        confidence: Math.min(confidence, 0.95),
+        risks: this.generateDefaultRisks(projectData)
+      }
+      
+    } catch (error) {
+      console.error('프로젝트 완료 예측 중 오류:', error)
+      return this.getDefaultPrediction()
+    }
+  }
+  
+  private getDefaultPrediction() {
     const estimatedDate = new Date()
-    estimatedDate.setDate(estimatedDate.getDate() + daysRemaining)
-
+    estimatedDate.setDate(estimatedDate.getDate() + 30)
+    
     return {
       estimatedDate,
-      confidence: 0.85,
+      confidence: 0.7,
       risks: [
-        '핵심 개발자 일정 조정 필요',
-        '외부 API 통합 지연 가능성',
-        '테스트 단계 병목 현상 예상'
+        '프로젝트 데이터 수집 중',
+        '정확한 예측을 위해 추가 데이터 필요',
+        '초기 단계로 인한 불확실성 존재'
       ]
     }
+  }
+  
+  private generateDefaultRisks(projectData: any): string[] {
+    const risks: string[] = []
+    const progress = projectData.progress || 0
+    
+    if (progress < 30) {
+      risks.push('초기 단계의 불확실성으로 인한 일정 변동 가능성')
+    }
+    
+    if (projectData.team?.length < 3) {
+      risks.push('제한된 팀 리소스로 인한 병목 현상 가능성')
+    }
+    
+    if (projectData.status === 'development') {
+      risks.push('개발 단계의 기술적 난제 발생 가능성')
+    }
+    
+    if (risks.length === 0) {
+      risks.push('일반적인 프로젝트 리스크 모니터링 필요')
+    }
+    
+    return risks
   }
 
   async generateReport(type: 'weekly' | 'monthly' | 'project'): Promise<string> {

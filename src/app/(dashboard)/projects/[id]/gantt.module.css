@@ -1,0 +1,35 @@
+.ganttWrapper {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  contain: layout size style;
+  max-width: 100%;
+}
+
+.ganttTabContent {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ganttScrollContainer {
+  flex: 1;
+  min-height: 0;
+  padding: 1.5rem;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* 간트차트가 페이지 레이아웃을 깨지 않도록 격리 */
+.ganttScrollContainer > div {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}

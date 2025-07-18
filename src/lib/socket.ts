@@ -1,13 +1,21 @@
 import { io, Socket } from 'socket.io-client'
+import { detectServiceUrls } from '@/config/services'
 
 class SocketService {
   private socket: Socket | null = null
-  private serverUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3003'
+  private serverUrl: string | null = null
 
-  connect(userData: { id: string; name: string; role: string }) {
+  async connect(userData: { id: string; name: string; role: string }) {
     if (this.socket?.connected) return
 
-    this.socket = io(this.serverUrl, {
+    // 서버 URL 자동 감지
+    if (!this.serverUrl) {
+      const urls = await detectServiceUrls()
+      this.serverUrl = urls.socketUrl || 'http://localhost:3003'
+      console.log(`Socket.io 서버 URL: ${this.serverUrl}`)
+    }
+
+    this.socket = io(this.serverUrl || '', {
       autoConnect: true,
     })
 

@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react'
 import { Gantt, Task, ViewMode } from 'gantt-task-react'
 import "gantt-task-react/dist/index.css"
 import { motion } from 'framer-motion'
+import styles from './GanttChartPro.module.css'
 
 interface GanttChartProProps {
   tasks: Task[]
@@ -37,9 +38,9 @@ export default function GanttChartPro({
                     view === ViewMode.Week ? 250 : 65
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className={styles.ganttContainer}>
       {/* 툴바 */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex-shrink-0 mb-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-semibold">프로젝트 간트차트</h2>
           <span className="text-sm text-gray-500">
@@ -106,9 +107,10 @@ export default function GanttChartPro({
       </div>
 
       {/* 간트차트 */}
-      <div className="overflow-x-auto border rounded-lg">
+      <div className={styles.ganttWrapper}>
         {tasks.length > 0 ? (
-          <Gantt
+          <div style={{ minWidth: '1200px', padding: '1rem' }}>
+            <Gantt
             tasks={tasks}
             viewMode={view}
             onDateChange={onDateChange}
@@ -117,7 +119,7 @@ export default function GanttChartPro({
             onDoubleClick={handleTaskClick}
             onExpanderClick={handleExpanderClick}
             listCellWidth={isChecked ? "155px" : ""}
-            ganttHeight={400}
+            ganttHeight={Math.max(400, tasks.length * 50 + 100)}
             columnWidth={columnWidth}
             locale="ko"
             barCornerRadius={3}
@@ -139,7 +141,8 @@ export default function GanttChartPro({
             fontSize="14px"
             rowHeight={50}
             todayColor="rgba(79, 126, 255, 0.1)"
-          />
+            />
+          </div>
         ) : (
           <div className="text-center py-12 text-gray-500">
             작업이 없습니다. 새 작업을 추가해주세요.
@@ -152,7 +155,7 @@ export default function GanttChartPro({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 p-4 bg-gray-50 rounded-lg"
+          className="flex-shrink-0 mt-4 p-4 bg-gray-50 rounded-lg"
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-medium text-gray-900">작업 상세 정보</h3>
@@ -197,7 +200,7 @@ export default function GanttChartPro({
       )}
 
       {/* 범례 */}
-      <div className="mt-6 flex flex-wrap gap-4 text-sm">
+      <div className="flex-shrink-0 mt-4 flex flex-wrap gap-4 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-3 bg-[#4f7eff] rounded"></div>
           <span className="text-gray-600">일반 작업</span>

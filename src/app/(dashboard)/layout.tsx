@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
+import Header from '@/components/layout/Header'
 import ChatNotifications from '@/components/chat/ChatNotifications'
-import OnlineStatus from '@/components/chat/OnlineStatus'
 import AIAssistant from '@/components/ai/AIAssistant'
 import { AuthProvider } from '@/lib/auth-context'
 import { NotificationProvider } from '@/lib/notification-context'
 import NotificationToast from '@/components/notification/NotificationToast'
+import { Toaster } from 'react-hot-toast'
 
 export default function DashboardLayout({
   children,
@@ -21,15 +22,17 @@ export default function DashboardLayout({
       <NotificationProvider>
         <div className="flex h-screen bg-gray-50">
           <Sidebar />
-          <main className="flex-1 lg:ml-[var(--sidebar-width)] p-4 lg:p-8 overflow-auto">
-            <div className="max-w-7xl mx-auto pt-14 lg:pt-0">
-              {children}
-            </div>
-          </main>
+          <div className="flex-1 lg:ml-[var(--sidebar-width)] flex flex-col">
+            <Header />
+            <main className="flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="p-4 lg:p-8">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
         <NotificationToast />
-        <ChatNotifications />
-        <OnlineStatus compact />
+        <ChatNotifications /> {/* 채팅 알림을 헤더 알림 시스템과 통합 */}
         
         {/* AI Assistant 버튼 */}
         <button
@@ -43,6 +46,33 @@ export default function DashboardLayout({
         <AIAssistant 
           isOpen={isAIAssistantOpen} 
           onClose={() => setIsAIAssistantOpen(false)} 
+        />
+        
+        {/* Toast Notifications */}
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#333',
+              color: '#fff',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              fontSize: '14px',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
         />
       </NotificationProvider>
     </AuthProvider>

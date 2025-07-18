@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gantt Chart Container Test</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    .page-container {
+      display: flex;
+      height: 100vh;
+    }
+    
+    .sidebar {
+      width: 260px;
+      background: #1f2937;
+      color: white;
+      padding: 20px;
+    }
+    
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #f9fafb;
+    }
+    
+    .header {
+      height: 60px;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 20px;
+      padding: 0 20px;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .tab {
+      padding: 16px 4px;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    
+    .tab.active {
+      border-bottom-color: #4f7eff;
+      color: #4f7eff;
+    }
+    
+    .content-area {
+      flex: 1;
+      overflow: hidden;
+      background: white;
+      margin: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    /* Gantt container - This is the key */
+    .gantt-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .gantt-header {
+      flex-shrink: 0;
+      padding: 16px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .gantt-scroll-area {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+      min-height: 0;
+      padding: 16px;
+    }
+    
+    .gantt-content {
+      min-width: 1200px;
+      height: 600px;
+      background: linear-gradient(90deg, #f3f4f6 1px, transparent 1px),
+                  linear-gradient(#f3f4f6 1px, transparent 1px);
+      background-size: 50px 50px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #6b7280;
+    }
+    
+    /* Scrollbar styling */
+    .gantt-scroll-area::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+    
+    .gantt-scroll-area::-webkit-scrollbar-track {
+      background: #f3f4f6;
+      border-radius: 5px;
+    }
+    
+    .gantt-scroll-area::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 5px;
+    }
+    
+    .gantt-scroll-area::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="sidebar">
+      <h3>CodeB Platform</h3>
+      <p>Sidebar content</p>
+    </div>
+    
+    <div class="main-content">
+      <div class="header">
+        <h1>Project Detail Page</h1>
+      </div>
+      
+      <div class="tabs">
+        <div class="tab">📋 개요</div>
+        <div class="tab">📊 칸반보드</div>
+        <div class="tab active">📈 간트차트</div>
+        <div class="tab">📁 파일</div>
+        <div class="tab">👥 팀</div>
+      </div>
+      
+      <div class="content-area">
+        <div class="gantt-container">
+          <div class="gantt-header">
+            <h2>프로젝트 간트차트</h2>
+            <div>
+              <button>일</button>
+              <button>주</button>
+              <button>월</button>
+              <button>년</button>
+            </div>
+          </div>
+          
+          <div class="gantt-scroll-area">
+            <div class="gantt-content">
+              This represents a 1200px wide Gantt chart<br>
+              Scroll horizontally to see more →
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

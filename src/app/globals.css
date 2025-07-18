@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Gantt chart styles */
+@import 'gantt-task-react/dist/index.css';
+
 @layer base {
   :root {
     --sidebar-width: 260px;
@@ -53,4 +56,45 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* 간트차트 스크롤 격리 */
+.gantt-chart-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+/* gantt-task-react 라이브러리 오버라이드 */
+.gantt-container-wrapper {
+  overflow: visible !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+.gantt-container {
+  overflow: visible !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+/* 간트차트 SVG가 컨테이너를 벗어나지 않도록 */
+.gantt-task-list-table {
+  table-layout: auto !important;
+}
+
+/* Gantt chart specific styles to ensure visibility */
+.gantt {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.gantt svg {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }

@@ -3,8 +3,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { GanttTask } from '@/types/project'
+import { GanttTask } from '@/types/task'
 import { motion } from 'framer-motion'
+import styles from './GanttChart.module.css'
 
 interface GanttChartProps {
   tasks: GanttTask[]
@@ -32,6 +33,36 @@ export default function GanttChart({
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; taskId: string } | null>(null)
   const chartRef = useRef<HTMLDivElement>(null)
+
+  // 컨텍스트 메뉴 닫기 - hooks must be called before any early returns
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [])
+
+  // 태스크가 없는 경우 빈 상태 표시
+  if (!tasks || tasks.length === 0) {
+    return (
+      <div className={styles.ganttContainer}>
+        <div className={styles.ganttEmpty}>
+          <div className={styles.ganttEmptyIcon}>📊</div>
+          <div className={styles.ganttEmptyText}>태스크가 없습니다</div>
+          <div className={styles.ganttEmptySubtext}>
+            태스크를 생성하여 간트차트를 확인하세요
+          </div>
+          {canEdit && onTaskAdd && (
+            <button
+              onClick={onTaskAdd}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              첫 번째 태스크 만들기
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // 날짜 범위 계산
   const totalDays = differenceInDays(endDate, startDate) + 1
@@ -68,12 +99,14 @@ export default function GanttChart({
 
   // 태스크 위치와 너비 계산
   const calculateTaskPosition = (task: GanttTask) => {
-    const startDiff = differenceInDays(task.startDate, startDate)
-    const duration = differenceInDays(task.endDate, task.startDate) + 1
+    const taskStartDate = task.startDate || startDate
+    const taskEndDate = task.dueDate || task.startDate || endDate
+    const startDiff = differenceInDays(taskStartDate, startDate)
+    const duration = differenceInDays(taskEndDate, taskStartDate) + 1
     
     return {
-      left: startDiff * dayWidth,
-      width: duration * dayWidth
+      left: Math.max(0, startDiff * dayWidth),
+      width: Math.max(dayWidth, duration * dayWidth)
     }
   }
 
@@ -99,13 +132,6 @@ export default function GanttChart({
       taskId
     })
   }
-
-  // 컨텍스트 메뉴 닫기
-  useEffect(() => {
-    const handleClick = () => setContextMenu(null)
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [])
 
   // 태스크 드래그 시작
   const handleDragStart = (taskId: string) => {
@@ -144,18 +170,16 @@ export default function GanttChart({
     return searchInTasks(tasks)
   }
 
-  // 태스크 렌더링
-  const renderTask = (task: GanttTask, level: number = 0) => {
-    const position = calculateTaskPosition(task)
+  // 태스크 이름 렌더링
+  const renderTaskName = (task: GanttTask, level: number = 0) => {
     const isExpanded = expandedProjects.has(task.id)
     const hasChildren = task.children && task.children.length > 0
 
     return (
       <React.Fragment key={task.id}>
-        <div className="flex items-center h-12 border-b border-gray-200">
-          {/* 태스크 이름 */}
+        <div className="h-12 border-b border-gray-200 flex items-center">
           <div 
-            className="w-64 px-4 flex items-center gap-2 border-r border-gray-200"
+            className="px-4 flex items-center gap-2 w-full"
             style={{ paddingLeft: `${level * 20 + 16}px` }}
           >
             {hasChildren && (
@@ -166,92 +190,97 @@ export default function GanttChart({
                 {isExpanded ? '▼' : '▶'}
               </button>
             )}
-            <span className="truncate font-medium">{task.name}</span>
-          </div>
-
-          {/* 간트 바 영역 */}
-          <div className="flex-1 relative h-full">
-            <motion.div
-              className={`
-                absolute top-2 h-8 rounded-md cursor-pointer
-                ${selectedTask === task.id ? 'ring-2 ring-primary' : ''}
-                ${isDragging && draggedTask === task.id ? 'opacity-50' : ''}
-              `}
-              style={{
-                left: `${position.left}px`,
-                width: `${position.width}px`,
-                backgroundColor: task.color || '#4f7eff'
-              }}
-              onClick={() => setSelectedTask(task.id)}
-              onContextMenu={(e) => handleContextMenu(e, task.id)}
-              onMouseDown={() => handleDragStart(task.id)}
-              onMouseUp={handleDragEnd}
-              whileHover={{ scale: canEdit ? 1.02 : 1 }}
-              whileTap={{ scale: canEdit ? 0.98 : 1 }}
-              drag={canEdit ? "x" : false}
-              dragConstraints={chartRef}
-              onDragEnd={() => handleDragEnd()}
-            >
-              {/* 진행률 바 */}
-              <div
-                className={`h-full rounded-md ${getProgressColor(task.progress)} opacity-80`}
-                style={{ width: `${task.progress}%` }}
-              />
-              
-              {/* 진행률 텍스트 */}
-              <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-medium">
-                {task.progress}%
-              </div>
-
-              {/* 마일스톤 표시 */}
-              {position.width <= dayWidth && (
-                <div className="absolute -top-1 -left-1 w-6 h-6 bg-yellow-400 rounded-full border-2 border-white" />
-              )}
-            </motion.div>
-
-            {/* 의존성 화살표 */}
-            {task.dependencies?.map(depId => {
-              // 실제 구현에서는 의존성 화살표 그리기
-              return null
-            })}
+            <span className="truncate font-medium text-gray-800">{task.title}</span>
           </div>
         </div>
 
         {/* 하위 태스크 */}
         {isExpanded && task.children?.map(child => 
-          renderTask(child, level + 1)
+          renderTaskName(child, level + 1)
+        )}
+      </React.Fragment>
+    )
+  }
+
+  // 태스크 바 렌더링
+  const renderTaskBar = (task: GanttTask, level: number = 0) => {
+    const position = calculateTaskPosition(task)
+    const isExpanded = expandedProjects.has(task.id)
+
+    return (
+      <React.Fragment key={task.id}>
+        <div className="h-12 border-b border-gray-200 relative">
+          <motion.div
+            className={`
+              absolute top-2 h-8 rounded-md cursor-pointer
+              ${selectedTask === task.id ? 'ring-2 ring-primary' : ''}
+              ${isDragging && draggedTask === task.id ? 'opacity-50' : ''}
+            `}
+            style={{
+              left: `${position.left}px`,
+              width: `${position.width}px`,
+              backgroundColor: task.color || '#4f7eff'
+            }}
+            onClick={() => setSelectedTask(task.id)}
+            onContextMenu={(e) => handleContextMenu(e, task.id)}
+            onMouseDown={() => handleDragStart(task.id)}
+            onMouseUp={handleDragEnd}
+            whileHover={{ scale: canEdit ? 1.02 : 1 }}
+            whileTap={{ scale: canEdit ? 0.98 : 1 }}
+            drag={canEdit ? "x" : false}
+            dragConstraints={chartRef}
+            onDragEnd={() => handleDragEnd()}
+          >
+            {/* 진행률 바 */}
+            <div
+              className={`h-full rounded-md ${getProgressColor(task.progress)} opacity-80`}
+              style={{ width: `${task.progress}%` }}
+            />
+            
+            {/* 진행률 텍스트 */}
+            <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-medium drop-shadow-md">
+              {task.progress}%
+            </div>
+
+            {/* 마일스톤 표시 */}
+            {position.width <= dayWidth && (
+              <div className="absolute -top-1 -left-1 w-6 h-6 bg-yellow-400 rounded-full border-2 border-white" />
+            )}
+          </motion.div>
+        </div>
+
+        {/* 하위 태스크 */}
+        {isExpanded && task.children?.map(child => 
+          renderTaskBar(child, level + 1)
         )}
       </React.Fragment>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className={styles.ganttContainer}>
       {/* 헤더 */}
-      <div className="flex border-b border-gray-300">
-        <div className="w-64 px-4 py-3 font-semibold bg-gray-50 border-r border-gray-300">
-          태스크
+      <div className={styles.ganttHeader}>
+        <div className={styles.ganttTaskColumn}>
+          📋 태스크 ({tasks.length}개)
         </div>
-        <div className="flex-1 overflow-x-auto" ref={chartRef}>
-          <div className="flex">
+        <div className={styles.ganttTimelineHeader}>
+          <div className="inline-flex" style={{ minWidth: `${totalDays * dayWidth}px` }}>
             {/* 월별 헤더 */}
             {months.map((month, idx) => (
               <div
                 key={idx}
-                className="border-r border-gray-300"
+                className={styles.ganttMonthHeader}
                 style={{ width: `${month.days * dayWidth}px` }}
               >
-                <div className="px-2 py-2 bg-gray-50 border-b border-gray-300 text-center font-medium">
+                <div className="mb-2">
                   {month.name}
                 </div>
                 <div className="flex">
                   {month.dates.map((date, i) => (
                     <div
                       key={i}
-                      className={`
-                        w-10 py-1 text-xs text-center border-r border-gray-200
-                        ${isWeekend(date) ? 'bg-gray-50' : ''}
-                      `}
+                      className={`${styles.ganttDayHeader} ${isWeekend(date) ? styles.weekend : ''}`}
                     >
                       {format(date, 'd')}
                     </div>
@@ -264,23 +293,77 @@ export default function GanttChart({
       </div>
 
       {/* 태스크 목록 */}
-      <div className="flex">
-        <div className="flex-1">
-          {tasks.map(task => renderTask(task))}
+      <div className={styles.ganttContent}>
+        <div className={styles.ganttTaskList}>
+          {/* 태스크 이름 컬럼 */}
+          {tasks.map((task, index) => (
+            <div key={task.id} className={styles.ganttTaskRow}>
+              <div className="flex items-center gap-2 w-full">
+                <div 
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: task.color || '#4f7eff' }}
+                />
+                <span className="truncate font-medium text-gray-800 text-sm">{task.title}</span>
+                {task.assignee && (
+                  <span className="ml-auto text-xs text-gray-500">
+                    {task.assignee}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-
-      {/* 오늘 날짜 표시선 */}
-      {todayPosition >= 0 && todayPosition <= totalDays * dayWidth && (
-        <div
-          className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-10"
-          style={{ left: `${264 + todayPosition}px` }}
-        >
-          <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-            오늘
+        <div className={styles.ganttChartArea} ref={chartRef}>
+          <div className={styles.ganttChartInner} style={{ minWidth: `${totalDays * dayWidth}px`, height: `${tasks.length * 48}px` }}>
+            {/* 간트 바 영역 */}
+            {tasks.map((task, index) => {
+              const position = calculateTaskPosition(task)
+              return (
+                <motion.div
+                  key={task.id}
+                  className={`${styles.ganttTaskBar} ${selectedTask === task.id ? styles.selected : ''}`}
+                  style={{
+                    left: `${position.left}px`,
+                    width: `${position.width}px`,
+                    top: `${index * 48 + 8}px`,
+                    backgroundColor: task.color || '#4f7eff'
+                  }}
+                  onClick={() => setSelectedTask(task.id)}
+                  onContextMenu={(e) => handleContextMenu(e, task.id)}
+                  whileHover={{ scale: canEdit ? 1.02 : 1 }}
+                  whileTap={{ scale: canEdit ? 0.98 : 1 }}
+                >
+                  {/* 진행률 바 */}
+                  <div
+                    className={styles.ganttProgressBar}
+                    style={{ 
+                      width: `${task.progress}%`,
+                      backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                    }}
+                  />
+                  
+                  {/* 진행률 텍스트 */}
+                  <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-medium drop-shadow-sm">
+                    {task.progress}%
+                  </div>
+                </motion.div>
+              )
+            })}
+            
+            {/* 오늘 날짜 표시선 */}
+            {todayPosition >= 0 && todayPosition <= totalDays * dayWidth && (
+              <div
+                className={styles.ganttTodayLine}
+                style={{ left: `${todayPosition}px` }}
+              >
+                <div className={styles.ganttTodayLabel}>
+                  오늘
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* 컨텍스트 메뉴 */}
       {contextMenu && (
@@ -370,11 +453,11 @@ interface TaskDetailModalProps {
 
 function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailModalProps) {
   const [formData, setFormData] = useState({
-    name: task?.name || '',
+    title: task?.title || '',
     progress: task?.progress || 0,
     assignee: task?.assignee || '',
     startDate: task?.startDate ? format(task.startDate, 'yyyy-MM-dd') : '',
-    endDate: task?.endDate ? format(task.endDate, 'yyyy-MM-dd') : ''
+    dueDate: task?.dueDate ? format(task.dueDate, 'yyyy-MM-dd') : ''
   })
 
   if (!task) return null
@@ -383,11 +466,11 @@ function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailModalProps) {
     e.preventDefault()
     onUpdate({
       ...task,
-      name: formData.name,
+      title: formData.title,
       progress: formData.progress,
       assignee: formData.assignee,
       startDate: new Date(formData.startDate),
-      endDate: new Date(formData.endDate)
+      dueDate: new Date(formData.dueDate)
     })
   }
 
@@ -413,8 +496,8 @@ function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailModalProps) {
             </label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="input"
               required
             />
@@ -452,8 +535,8 @@ function TaskDetailModal({ task, onClose, onUpdate }: TaskDetailModalProps) {
               </label>
               <input
                 type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                value={formData.dueDate}
+                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 className="input"
                 required
               />

@@ -28,13 +28,14 @@ interface UserProfile {
   uid: string
   email: string
   displayName: string
-  role: 'customer' | 'admin' | 'manager' | 'developer'
+  role: 'customer' | 'admin' | 'manager' | 'developer' | 'external'
   createdAt: string
   lastLogin: string
   isOnline: boolean
   avatar?: string
   phone?: string
   company?: string
+  group?: string // 고객 그룹 ID
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -223,15 +224,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    if (user) {
-      try {
-        await set(ref(database, `users/${user.uid}/isOnline`), false)
-      } catch (error) {
-        console.warn('오프라인 상태 업데이트 실패:', error)
+    try {
+      if (user) {
+        try {
+          await set(ref(database, `users/${user.uid}/isOnline`), false)
+        } catch (error) {
+          console.warn('오프라인 상태 업데이트 실패:', error)
+        }
       }
+      
+      // 테스트 모드인 경우 처리
+      if (userProfile && userProfile.uid?.startsWith('test-')) {
+        setUserProfile(null)
+        setUser(null as any)
+      }
+      
+      localStorage.removeItem('userRole')
+      await signOut(auth)
+      
+      // 로그인 페이지로 리다이렉트
+      window.location.href = '/login'
+    } catch (error) {
+      console.error('로그아웃 실패:', error)
+      // Firebase 오류가 발생해도 로컬 상태는 초기화
+      setUserProfile(null)
+      setUser(null as any)
+      localStorage.removeItem('userRole')
+      window.location.href = '/login'
     }
-    localStorage.removeItem('userRole')
-    await signOut(auth)
   }
 
   const value = {

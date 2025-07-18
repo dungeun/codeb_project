@@ -3,7 +3,39 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import KanbanBoardPro from '@/components/kanban/KanbanBoardPro'
+import { KanbanBoardPro } from '@/components/kanban'
+import { KanbanTask, TaskPriority, TaskStatus } from '@/types/task'
+
+// Mock 칸반보드 데이터 생성 함수
+const createMockTask = (
+  id: string, 
+  columnId: string, 
+  order: number, 
+  title: string, 
+  description: string,
+  priority: TaskPriority,
+  extras: Partial<KanbanTask> = {}
+): KanbanTask => ({
+  id,
+  columnId,
+  order,
+  projectId: 'mock-project',
+  title,
+  description,
+  priority,
+  status: columnId as TaskStatus,
+  labels: [],
+  assignee: '김개발',
+  assigneeId: 'user-1',
+  assigneeName: '김개발',
+  attachments: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  createdBy: 'user-1',
+  attachmentCount: 0,
+  commentCount: 0,
+  ...extras
+})
 
 // Mock 칸반보드 데이터
 const mockKanbanColumns = [
@@ -13,32 +45,38 @@ const mockKanbanColumns = [
     color: '#ef4444',
     limit: 10,
     tasks: [
-      {
-        id: 'task-1',
-        title: 'API 설계 문서 작성',
-        description: 'RESTful API 엔드포인트 설계 및 문서화',
-        priority: 'high' as const,
-        labels: ['백엔드', '문서화'],
-        assignee: '김개발',
-        dueDate: new Date('2024-02-01'),
-        attachments: 2,
-        comments: 5,
-      },
-      {
-        id: 'task-2',
-        title: '데이터베이스 스키마 설계',
-        description: 'MySQL 데이터베이스 테이블 구조 설계',
-        priority: 'urgent' as const,
-        labels: ['DB', '설계'],
-        assignee: '김개발',
-        dueDate: new Date('2024-01-25'),
-        checklist: [
-          { id: 'c1', text: '사용자 테이블', completed: true },
-          { id: 'c2', text: '상품 테이블', completed: true },
-          { id: 'c3', text: '주문 테이블', completed: false },
-          { id: 'c4', text: '결제 테이블', completed: false },
-        ]
-      },
+      createMockTask(
+        'task-1',
+        'todo',
+        0,
+        'API 설계 문서 작성',
+        'RESTful API 엔드포인트 설계 및 문서화',
+        TaskPriority.HIGH,
+        {
+          labels: ['백엔드', '문서화'],
+          dueDate: new Date('2024-02-01'),
+          attachmentCount: 2,
+          commentCount: 5,
+        }
+      ),
+      createMockTask(
+        'task-2',
+        'todo',
+        1,
+        '데이터베이스 스키마 설계',
+        'MySQL 데이터베이스 테이블 구조 설계',
+        TaskPriority.URGENT,
+        {
+          labels: ['DB', '설계'],
+          dueDate: new Date('2024-01-25'),
+          checklist: [
+            { id: 'c1', text: '사용자 테이블', completed: true },
+            { id: 'c2', text: '상품 테이블', completed: true },
+            { id: 'c3', text: '주문 테이블', completed: false },
+            { id: 'c4', text: '결제 테이블', completed: false },
+          ]
+        }
+      ),
     ]
   },
   {
@@ -47,32 +85,42 @@ const mockKanbanColumns = [
     color: '#eab308',
     limit: 5,
     tasks: [
-      {
-        id: 'task-3',
-        title: '홈페이지 UI 디자인',
-        description: '메인 페이지 및 서브 페이지 UI 디자인 작업',
-        priority: 'medium' as const,
-        labels: ['디자인', 'UI/UX'],
-        assignee: '이디자인',
-        dueDate: new Date('2024-02-10'),
-        attachments: 5,
-        comments: 12,
-        checklist: [
-          { id: 'c1', text: '와이어프레임', completed: true },
-          { id: 'c2', text: '컬러 팔레트', completed: true },
-          { id: 'c3', text: '메인 페이지', completed: true },
-          { id: 'c4', text: '서브 페이지', completed: false },
-        ]
-      },
-      {
-        id: 'task-4',
-        title: '로그인 기능 구현',
-        description: 'JWT 기반 사용자 인증 시스템 구현',
-        priority: 'high' as const,
-        labels: ['프론트엔드', '백엔드'],
-        assignee: '최개발',
-        dueDate: new Date('2024-02-05'),
-      },
+      createMockTask(
+        'task-3',
+        'in-progress',
+        0,
+        '홈페이지 UI 디자인',
+        '메인 페이지 및 서브 페이지 UI 디자인 작업',
+        TaskPriority.MEDIUM,
+        {
+          labels: ['디자인', 'UI/UX'],
+          assignee: '이디자인',
+          assigneeName: '이디자인',
+          dueDate: new Date('2024-02-10'),
+          attachmentCount: 5,
+          commentCount: 12,
+          checklist: [
+            { id: 'c1', text: '와이어프레임', completed: true },
+            { id: 'c2', text: '컬러 팔레트', completed: true },
+            { id: 'c3', text: '메인 페이지', completed: true },
+            { id: 'c4', text: '서브 페이지', completed: false },
+          ]
+        }
+      ),
+      createMockTask(
+        'task-4',
+        'in-progress',
+        1,
+        '로그인 기능 구현',
+        'JWT 기반 사용자 인증 시스템 구현',
+        TaskPriority.HIGH,
+        {
+          labels: ['프론트엔드', '백엔드'],
+          assignee: '최개발',
+          assigneeName: '최개발',
+          dueDate: new Date('2024-02-05'),
+        }
+      ),
     ]
   },
   {
@@ -80,15 +128,20 @@ const mockKanbanColumns = [
     title: '검토',
     color: '#8b5cf6',
     tasks: [
-      {
-        id: 'task-5',
-        title: '회원가입 플로우 검토',
-        description: '회원가입 프로세스 UX 개선점 검토',
-        priority: 'medium' as const,
-        labels: ['UX', '검토'],
-        assignee: '박기획',
-        comments: 8,
-      },
+      createMockTask(
+        'task-5',
+        'review',
+        0,
+        '회원가입 플로우 검토',
+        '회원가입 프로세스 UX 개선점 검토',
+        TaskPriority.MEDIUM,
+        {
+          labels: ['UX', '검토'],
+          assignee: '박기획',
+          assigneeName: '박기획',
+          commentCount: 8,
+        }
+      ),
     ]
   },
   {
@@ -96,37 +149,53 @@ const mockKanbanColumns = [
     title: '완료',
     color: '#10b981',
     tasks: [
-      {
-        id: 'task-6',
-        title: '프로젝트 킥오프 미팅',
-        description: '프로젝트 시작 미팅 및 요구사항 정리',
-        priority: 'low' as const,
-        labels: ['미팅'],
-        assignee: '박기획',
-        checklist: [
-          { id: 'c1', text: '요구사항 정리', completed: true },
-          { id: 'c2', text: '일정 수립', completed: true },
-          { id: 'c3', text: '역할 분담', completed: true },
-        ]
-      },
-      {
-        id: 'task-7',
-        title: '개발 환경 설정',
-        description: 'Next.js, TypeScript, Tailwind CSS 환경 구축',
-        priority: 'medium' as const,
-        labels: ['설정'],
-        assignee: '김개발',
-      },
+      createMockTask(
+        'task-6',
+        'done',
+        0,
+        '프로젝트 킥오프 미팅',
+        '프로젝트 시작 미팅 및 요구사항 정리',
+        TaskPriority.LOW,
+        {
+          labels: ['미팅'],
+          assignee: '박기획',
+          assigneeName: '박기획',
+          checklist: [
+            { id: 'c1', text: '요구사항 정리', completed: true },
+            { id: 'c2', text: '일정 수립', completed: true },
+            { id: 'c3', text: '역할 분담', completed: true },
+          ]
+        }
+      ),
+      createMockTask(
+        'task-7',
+        'done',
+        1,
+        '개발 환경 설정',
+        'Next.js, TypeScript, Tailwind CSS 환경 구축',
+        TaskPriority.MEDIUM,
+        {
+          labels: ['설정'],
+        }
+      ),
     ]
   }
 ]
 
+interface KanbanColumn {
+  id: string
+  title: string
+  color: string
+  limit?: number
+  tasks: KanbanTask[]
+}
+
 export default function KanbanPage() {
   const params = useParams()
   const projectId = params.id as string
-  const [columns, setColumns] = useState(mockKanbanColumns)
+  const [columns, setColumns] = useState<KanbanColumn[]>(mockKanbanColumns)
 
-  const handleColumnsChange = (newColumns: any) => {
+  const handleColumnsChange = (newColumns: KanbanColumn[]) => {
     setColumns(newColumns)
     console.log('Columns updated:', newColumns)
   }
@@ -135,7 +204,7 @@ export default function KanbanPage() {
     console.log('Add task to column:', columnId)
   }
 
-  const handleTaskEdit = (task: any) => {
+  const handleTaskEdit = (task: KanbanTask) => {
     console.log('Edit task:', task)
   }
 
@@ -150,7 +219,7 @@ export default function KanbanPage() {
       }
       return col
     })
-    setColumns(newColumns as any)
+    setColumns(newColumns)
   }
 
   return (

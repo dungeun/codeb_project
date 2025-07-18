@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import WorkflowBuilder from '@/components/automation/WorkflowBuilder'
+import ServiceStatus from '@/components/automation/ServiceStatus'
 import { Workflow, WorkflowTemplate } from '@/types/automation'
 import { useAuth } from '@/lib/auth-context'
 
@@ -182,6 +183,9 @@ export default function AutomationPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">자동화 워크플로우</h1>
           <p className="text-gray-600 mt-1">반복적인 작업을 자동화하여 업무 효율성을 높이세요.</p>
+          <div className="mt-2">
+            <ServiceStatus />
+          </div>
         </div>
         
         <div className="flex gap-3">

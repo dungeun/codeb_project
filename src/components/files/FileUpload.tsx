@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 
 interface FileUploadProps {
-  onUpload: (files: File[]) => void
+  onUpload: (files: File[]) => void | Promise<void>
   maxSize?: number // MB
   acceptedTypes?: string[]
 }
@@ -16,6 +16,7 @@ export default function FileUpload({
   acceptedTypes = ['*']
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const validateFile = (file: File): string | null => {
@@ -43,7 +44,9 @@ export default function FileUpload({
     return null
   }
 
-  const handleFiles = (files: FileList) => {
+  const handleFiles = async (files: FileList) => {
+    if (isUploading) return
+    
     const validFiles: File[] = []
     const errors: string[] = []
 
@@ -61,8 +64,12 @@ export default function FileUpload({
     }
 
     if (validFiles.length > 0) {
-      onUpload(validFiles)
-      toast.success(`${validFiles.length}개 파일이 추가되었습니다.`)
+      setIsUploading(true)
+      try {
+        await onUpload(validFiles)
+      } finally {
+        setIsUploading(false)
+      }
     }
   }
 
@@ -122,11 +129,13 @@ export default function FileUpload({
 
         <div className="text-center">
           <div className="text-4xl mb-4">
-            {isDragging ? '📥' : '☁️'}
+            {isUploading ? '⏳' : isDragging ? '📥' : '☁️'}
           </div>
           
           <p className="text-lg font-medium text-gray-700 mb-2">
-            {isDragging 
+            {isUploading 
+              ? '파일 업로드 중...' 
+              : isDragging 
               ? '여기에 파일을 놓으세요' 
               : '파일을 드래그하거나 클릭하여 업로드'
             }
@@ -135,6 +144,14 @@ export default function FileUpload({
           <p className="text-sm text-gray-500">
             최대 {maxSize}MB, {acceptedTypes[0] === '*' ? '모든 파일 형식' : acceptedTypes.join(', ')}
           </p>
+          
+          {isUploading && (
+            <div className="mt-4">
+              <div className="w-48 h-2 bg-gray-200 rounded-full mx-auto overflow-hidden">
+                <div className="h-full bg-primary animate-pulse"></div>
+              </div>
+            </div>
+          )}
         </div>
 
         {isDragging && (

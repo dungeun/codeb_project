@@ -1,0 +1,255 @@
+.ganttContainer {
+  display: flex !important;
+  flex-direction: column !important;
+  height: calc(100vh - 200px) !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  position: relative !important;
+  background-color: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 0.5rem !important;
+}
+
+.ganttHeader {
+  display: grid !important;
+  grid-template-columns: 250px 1fr !important;
+  border-bottom: 2px solid #d1d5db !important;
+  flex-shrink: 0 !important;
+  background-color: #f9fafb !important;
+  min-height: 80px !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+.ganttTaskColumn {
+  width: 250px !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 600 !important;
+  border-right: 2px solid #d1d5db !important;
+  color: #1f2937 !important;
+  flex-shrink: 0 !important;
+  background-color: #f9fafb !important;
+  display: flex !important;
+  align-items: center !important;
+  font-size: 0.875rem !important;
+}
+
+.ganttTimelineHeader {
+  flex: 1 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  min-width: 0 !important;
+  background-color: #f9fafb !important;
+}
+
+.ganttContent {
+  display: grid !important;
+  grid-template-columns: 250px 1fr !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
+
+.ganttTaskList {
+  border-right: 2px solid #d1d5db !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background-color: #fafafa !important;
+  width: 250px !important;
+}
+
+.ganttChartArea {
+  overflow: auto !important;
+  min-width: 0 !important;
+  position: relative !important;
+  background-color: white !important;
+  background-image: 
+    linear-gradient(to right, #f3f4f6 1px, transparent 1px),
+    linear-gradient(to bottom, #f3f4f6 1px, transparent 1px) !important;
+  background-size: 40px 48px !important;
+}
+
+.ganttChartInner {
+  position: relative !important;
+  min-height: 100% !important;
+}
+
+/* 태스크 행 스타일 */
+.ganttTaskRow {
+  height: 48px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 1rem !important;
+  background-color: white !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.ganttTaskRow:hover {
+  background-color: #f8fafc !important;
+}
+
+/* 태스크 바 스타일 */
+.ganttTaskBar {
+  position: absolute !important;
+  height: 32px !important;
+  top: 8px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  z-index: 5 !important;
+}
+
+.ganttTaskBar:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ganttTaskBar.selected {
+  box-shadow: 0 0 0 2px #3b82f6 !important;
+}
+
+/* 진행률 바 */
+.ganttProgressBar {
+  height: 100% !important;
+  border-radius: 4px !important;
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  transition: width 0.3s ease !important;
+}
+
+/* 오늘 표시선 */
+.ganttTodayLine {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 2px !important;
+  background-color: #ef4444 !important;
+  pointer-events: none !important;
+  z-index: 20 !important;
+}
+
+.ganttTodayLabel {
+  position: absolute !important;
+  top: -24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background-color: #ef4444 !important;
+  color: white !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+}
+
+/* 월별 헤더 스타일 */
+.ganttMonthHeader {
+  padding: 8px 16px !important;
+  background-color: #e5e7eb !important;
+  border-bottom: 1px solid #d1d5db !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  font-size: 0.875rem !important;
+}
+
+.ganttDayHeader {
+  width: 40px !important;
+  padding: 4px 0 !important;
+  text-align: center !important;
+  border-right: 1px solid #e5e7eb !important;
+  color: #6b7280 !important;
+  font-size: 0.75rem !important;
+  background-color: white !important;
+}
+
+.ganttDayHeader.weekend {
+  background-color: #f8fafc !important;
+}
+
+/* 스크롤바 스타일 */
+.ganttTaskList::-webkit-scrollbar,
+.ganttChartArea::-webkit-scrollbar,
+.ganttTimelineHeader::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.ganttTaskList::-webkit-scrollbar-track,
+.ganttChartArea::-webkit-scrollbar-track,
+.ganttTimelineHeader::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+
+.ganttTaskList::-webkit-scrollbar-thumb,
+.ganttChartArea::-webkit-scrollbar-thumb,
+.ganttTimelineHeader::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 4px !important;
+}
+
+.ganttTaskList::-webkit-scrollbar-thumb:hover,
+.ganttChartArea::-webkit-scrollbar-thumb:hover,
+.ganttTimelineHeader::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .ganttContainer {
+    height: calc(100vh - 150px) !important;
+  }
+  
+  .ganttHeader {
+    grid-template-columns: 200px 1fr !important;
+  }
+  
+  .ganttContent {
+    grid-template-columns: 200px 1fr !important;
+  }
+  
+  .ganttTaskColumn,
+  .ganttTaskList {
+    width: 200px !important;
+  }
+}
+
+/* 로딩 상태 */
+.ganttLoading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 200px !important;
+  color: #6b7280 !important;
+}
+
+/* 빈 상태 */
+.ganttEmpty {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 200px !important;
+  color: #6b7280 !important;
+  background-color: #f9fafb !important;
+  border-radius: 0.5rem !important;
+  margin: 2rem !important;
+}
+
+.ganttEmptyIcon {
+  font-size: 3rem !important;
+  margin-bottom: 1rem !important;
+  opacity: 0.5 !important;
+}
+
+.ganttEmptyText {
+  font-size: 1.125rem !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.ganttEmptySubtext {
+  font-size: 0.875rem !important;
+  opacity: 0.7 !important;
+}

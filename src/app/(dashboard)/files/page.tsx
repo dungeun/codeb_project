@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import FileUpload from '@/components/files/FileUpload'
 import FileList, { FileItem } from '@/components/files/FileList'
 import { useAuth } from '@/lib/auth-context'
 import toast from 'react-hot-toast'
+import fileService from '@/services/file-service'
 
 interface DownloadHistory {
   id: string
@@ -18,82 +19,71 @@ interface DownloadHistory {
 export default function FilesPage() {
   const { user, userProfile } = useAuth()
   const [activeTab, setActiveTab] = useState<'files' | 'history'>('files')
-  const [files, setFiles] = useState<FileItem[]>([
-    // Mock 데이터
-    {
-      id: '1',
-      name: '프로젝트 기획서.pdf',
-      size: 2548576,
-      type: 'application/pdf',
-      url: '#',
-      category: 'document',
-      uploadedBy: '김기획',
-      createdAt: new Date('2024-01-05'),
-    },
-    {
-      id: '2',
-      name: '메인페이지 디자인.png',
-      size: 5242880,
-      type: 'image/png',
-      url: '#',
-      category: 'image',
-      uploadedBy: '이디자인',
-      createdAt: new Date('2024-01-04'),
-    },
-    {
-      id: '3',
-      name: '프로모션 비디오.mp4',
-      size: 15728640,
-      type: 'video/mp4',
-      url: '#',
-      category: 'video',
-      uploadedBy: '박영상',
-      createdAt: new Date('2024-01-03'),
-    },
-  ])
+  const [files, setFiles] = useState<FileItem[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const [downloadHistory, setDownloadHistory] = useState<DownloadHistory[]>([
-    // Mock 다운로드 이력 데이터
-    {
-      id: 'dl1',
-      fileId: '1',
-      fileName: '프로젝트 기획서.pdf',
-      downloadedBy: '김고객',
-      downloadedAt: new Date('2024-01-06T09:30:00'),
-      userAgent: 'Chrome/120.0.0.0'
-    },
-    {
-      id: 'dl2',
-      fileId: '2',
-      fileName: '메인페이지 디자인.png',
-      downloadedBy: '이디자인',
-      downloadedAt: new Date('2024-01-05T14:20:00'),
-      userAgent: 'Safari/17.2.1'
-    },
-    {
-      id: 'dl3',
-      fileId: '1',
-      fileName: '프로젝트 기획서.pdf',
-      downloadedBy: '박관리자',
-      downloadedAt: new Date('2024-01-04T16:45:00'),
-      userAgent: 'Chrome/120.0.0.0'
-    },
-  ])
+  const [downloadHistory, setDownloadHistory] = useState<DownloadHistory[]>([])
 
-  const handleUpload = (newFiles: File[]) => {
-    // 실제 구현에서는 서버에 업로드 후 결과를 받아야 함
-    const uploadedFiles: FileItem[] = newFiles.map((file, index) => ({
-      id: `new-${Date.now()}-${index}`,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file), // 임시 URL
-      category: getFileCategory(file.type),
-      uploadedBy: userProfile?.displayName || '알 수 없음',
-      createdAt: new Date(),
-    }))
+  // Firebase에서 파일 목록 로드
+  useEffect(() => {
+    loadFiles()
+  }, [])
 
-    setFiles(prev => [...uploadedFiles, ...prev])
+  const loadFiles = async () => {
+    try {
+      setLoading(true)
+      const filesList = await fileService.getFiles()
+      
+      // FileMetadata를 FileItem으로 변환
+      const fileItems: FileItem[] = filesList.map(file => ({
+        id: file.id,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: file.url,
+        category: file.category,
+        uploadedBy: file.uploadedByName,
+        createdAt: new Date(file.createdAt)
+      }))
+      
+      setFiles(fileItems)
+    } catch (error) {
+      console.error('Failed to load files:', error)
+      toast.error('파일 목록을 불러오는데 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpload = async (newFiles: File[]) => {
+    if (!user || !userProfile) return
+    
+    try {
+      // Firebase Storage에 업로드
+      const uploadedFiles = await fileService.uploadFiles(
+        newFiles,
+        user.uid,
+        userProfile.displayName || userProfile.email
+      )
+      
+      // 업로드된 파일을 목록에 추가
+      const fileItems: FileItem[] = uploadedFiles.map(file => ({
+        id: file.id,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: file.url,
+        category: file.category,
+        uploadedBy: file.uploadedByName,
+        createdAt: new Date(file.createdAt)
+      }))
+
+      setFiles(prev => [...fileItems, ...prev])
+      toast.success('파일이 업로드되었습니다.')
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('파일 업로드에 실패했습니다.')
+    }
   }
 
   const getFileCategory = (type: string): FileItem['category'] => {
@@ -103,33 +93,55 @@ export default function FilesPage() {
     return 'other'
   }
 
-  const handleDownload = (file: FileItem) => {
-    // 다운로드 이력 추가
-    const newDownload: DownloadHistory = {
-      id: `dl-${Date.now()}`,
-      fileId: file.id,
-      fileName: file.name,
-      downloadedBy: userProfile?.displayName || '알 수 없음',
-      downloadedAt: new Date(),
-      userAgent: navigator.userAgent.split(' ').pop() || 'Unknown'
+  const handleDownload = async (file: FileItem) => {
+    if (!user || !userProfile) return
+    
+    try {
+      // 다운로드 이력 기록
+      await fileService.recordDownload(
+        file.id,
+        user.uid,
+        userProfile.displayName || userProfile.email
+      )
+      
+      // 다운로드 이력 추가 (UI 업데이트용)
+      const newDownload: DownloadHistory = {
+        id: `dl-${Date.now()}`,
+        fileId: file.id,
+        fileName: file.name,
+        downloadedBy: userProfile?.displayName || '알 수 없음',
+        downloadedAt: new Date(),
+        userAgent: navigator.userAgent.split(' ').pop() || 'Unknown'
+      }
+      
+      setDownloadHistory(prev => [newDownload, ...prev])
+      
+      toast.success(`${file.name} 다운로드를 시작합니다.`)
+      
+      // 파일 다운로드
+      const link = document.createElement('a')
+      link.href = file.url
+      link.download = file.name
+      link.target = '_blank'
+      link.click()
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('파일 다운로드에 실패했습니다.')
     }
-    
-    setDownloadHistory(prev => [newDownload, ...prev])
-    
-    // 실제 구현에서는 서버에서 다운로드
-    toast.success(`${file.name} 다운로드를 시작합니다.`)
-    
-    // Mock 다운로드
-    const link = document.createElement('a')
-    link.href = file.url
-    link.download = file.name
-    link.click()
   }
 
-  const handleDelete = (file: FileItem) => {
+  const handleDelete = async (file: FileItem) => {
     if (confirm(`${file.name} 파일을 삭제하시겠습니까?`)) {
-      setFiles(prev => prev.filter(f => f.id !== file.id))
-      toast.success('파일이 삭제되었습니다.')
+      try {
+        // Firebase Storage에서 파일 삭제
+        await fileService.deleteFile(file.id)
+        
+        setFiles(prev => prev.filter(f => f.id !== file.id))
+        toast.success('파일이 삭제되었습니다.')
+      } catch (error) {
+        console.error('Delete error:', error)
+        toast.error('파일 삭제에 실패했습니다.')
+      }
     }
   }
 
@@ -144,6 +156,14 @@ export default function FilesPage() {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
